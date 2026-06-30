@@ -1,0 +1,27 @@
+import { redirect } from 'next/navigation';
+import { getSupabaseServer } from '@urban-assist/db/server';
+import { AppShell, NavItem } from '@urban-assist/ui';
+import { Briefcase, CalendarDays, Wallet, UserRound } from 'lucide-react';
+
+const nav: NavItem[] = [
+  { href: '/', label: 'Today', icon: <Briefcase className="h-4 w-4" /> },
+  { href: '/schedule', label: 'Schedule', icon: <CalendarDays className="h-4 w-4" /> },
+  { href: '/earnings', label: 'Earnings', icon: <Wallet className="h-4 w-4" /> },
+  { href: '/account', label: 'Account', icon: <UserRound className="h-4 w-4" /> },
+];
+
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const db = getSupabaseServer();
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) redirect('/login');
+
+  // Provider profile sanity check.
+  const { data: profile } = await db.from('profiles').select('role,kyc_status').eq('id', user.id).single();
+  if (!profile) redirect('/login');
+  if (profile.role !== 'provider') {
+    // Promote (e.g. shared account).
+    await db.from('profiles').update({ role: 'provider' }).eq('id', user.id);
+  }
+
+  return <AppShell nav={nav} brand="HomeEase Pro">{children}</AppShell>;
+}

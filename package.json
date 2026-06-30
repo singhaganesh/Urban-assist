@@ -1,0 +1,26 @@
+{
+  "name": "urban-assist",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Urban Assist — UK home services marketplace (customer + provider + admin)",
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev:customer": "pnpm --filter @homeease/customer dev",
+    "dev:provider": "pnpm --filter @homeease/provider dev",
+    "dev:admin":    "pnpm --filter @homeease/admin dev",
+    "build":        "pnpm -r build",
+    "lint":         "pnpm -r lint",
+    "typecheck":    "pnpm -r typecheck",
+    "format":       "prettier --write \"**/*.{ts,tsx,js,json,md}\" --ignore-path .gitignore",
+    "db:types":     "supabase gen types typescript --local > packages/db/src/types.ts",
+    "db:migrate":   "supabase db push"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.5",
+    "@types/node": "^20.12.7"
+  }
+}

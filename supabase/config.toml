@@ -1,0 +1,8 @@
+project_id = "homeease"
+
+[functions.match-cascade]
+verify_jwt = false
+
+# Tick every minute to expire stale offers.
+# [[functions.match-cascade.schedules]]
+# schedule = "* * * * *"

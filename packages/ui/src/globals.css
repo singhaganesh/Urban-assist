@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: 250 250 248;          /* Chalk White  #FAFAF8 */
+    --ink: 28 32 36;            /* Slate Ink    #1C2024 */
+    --accent: 232 163 61;       /* Signal Amber #E8A33D */
+    --success: 47 107 79;       /* Deep Forest  #2F6B4F */
+    --danger: 193 67 43;        /* Brick        #C1432B */
+    --muted: 139 141 145;       /* Stone        #8B8D91 */
+    --hairline: 226 226 222;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color-scheme: light;
+  }
+
+  body {
+    background: rgb(var(--bg));
+    color: rgb(var(--ink));
+    font-family: '"Public Sans"', system-ui, sans-serif;
+  }
+
+  /* Strong visible keyboard focus — accessibility floor (§5). */
+  :focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: rgb(var(--accent) / 0.3);
+  }
+}
+
+@layer utilities {
+  .font-mono-utility {
+    font-family: '"JetBrains Mono"', ui-monospace, monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .card {
+    @apply rounded-xl border border-hairline bg-white p-5;
+  }
+  .tap {
+    /* mobile minimum tap target */
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

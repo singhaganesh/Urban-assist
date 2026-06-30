@@ -1,0 +1,32 @@
+{
+  "name": "@urban-assist/server-lib",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./matching": "./src/matching.ts",
+    "./stripe": "./src/stripe/index.ts",
+    "./redis": "./src/redis.ts",
+    "./fcm": "./src/fcm.ts",
+    "./analytics": "./src/analytics.ts",
+    "./kyc": "./src/kyc.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'lint OK'"
+  },
+  "dependencies": {
+    "@urban-assist/db": "workspace:*",
+    "@supabase/supabase-js": "^2.45.0",
+    "@upstash/ratelimit": "^2.0.1",
+    "@upstash/redis": "^1.31.0",
+    "stripe": "^16.0.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

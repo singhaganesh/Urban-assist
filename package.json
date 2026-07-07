@@ -5,9 +5,9 @@
   "description": "Urban Assist — UK home services marketplace (customer + provider + admin)",
   "packageManager": "pnpm@9.0.0",
   "scripts": {
-    "dev:customer": "pnpm --filter @homeease/customer dev",
-    "dev:provider": "pnpm --filter @homeease/provider dev",
-    "dev:admin":    "pnpm --filter @homeease/admin dev",
+    "dev:customer": "pnpm --filter @urban-assist/customer dev",
+    "dev:provider": "pnpm --filter @urban-assist/provider dev",
+    "dev:admin":    "pnpm --filter @urban-assist/admin dev",
     "build":        "pnpm -r build",
     "lint":         "pnpm -r lint",
     "typecheck":    "pnpm -r typecheck",

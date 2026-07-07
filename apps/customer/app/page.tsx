@@ -8,25 +8,28 @@ import { Testimonials } from '../components/testimonials';
 import { AppCTA } from '../components/app-cta';
 import { Footer } from '../components/footer';
 import { MobileHome } from '../components/mobile-home';
+import { getHomepageData } from '../lib/homepage-data';
 
-export default function LandingPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function LandingPage() {
+  const data = await getHomepageData();
+
   return (
     <>
-      {/* Mobile layout */}
       <div className="lg:hidden">
-        <MobileHome />
+        <MobileHome data={data} />
       </div>
 
-      {/* Desktop layout */}
       <div className="hidden lg:block">
         <Header />
         <main>
-          <Hero />
-          <CategoryGrid />
-          <PromoCarousel />
-          <FeaturedServices />
+          <Hero categories={data.categories} promoCode={data.promoCode} />
+          <CategoryGrid categories={data.categories} />
+          <PromoCarousel promoCode={data.promoCode} />
+          <FeaturedServices trending={data.trending} />
           <WhyUs />
-          <Testimonials />
+          <Testimonials reviews={data.reviews} />
           <AppCTA />
         </main>
         <Footer />

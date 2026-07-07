@@ -2,6 +2,15 @@
 import { MapPin, Search, ChevronDown, Wrench, Sparkles, PaintBucket, Bug, Zap, Shirt, Wind, Shovel, Grid3X3, Star, ArrowRight, Gift, ChevronRight, Home, CalendarClock, Wallet, User, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
+import type { HomepageData, HomepageCategory, HomepageService, HomepageReview } from '../lib/homepage-data';
+import { getCategoryIcon } from '../lib/homepage-data';
+import { pence } from '@urban-assist/lib';
+
+/* ── Props ──────────────────────────────────────────────── */
+
+interface MobileHomeProps {
+  data: HomepageData;
+}
 
 /* ── Sticky Bottom Nav ─────────────────────────────────── */
 
@@ -38,7 +47,6 @@ function MobileHeader() {
   return (
     <header className="lg:hidden" style={{ background: '#1F3A4D' }}>
       <div className="px-4 pb-4 pt-3">
-        {/* Top row: settings + location */}
         <div className="mb-3 flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10">
             <svg className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
@@ -49,9 +57,7 @@ function MobileHeader() {
             <ChevronDown className="h-3 w-3 text-white/60" />
           </div>
         </div>
-        {/* Address */}
         <p className="mb-3 text-[11px] text-white/60">Select Delivery/Service Address...</p>
-        {/* Search */}
         <div className="relative">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
           <input
@@ -67,7 +73,7 @@ function MobileHeader() {
 
 /* ── Mobile Hero ────────────────────────────────────────── */
 
-function MobileHero() {
+function MobileHero({ promoCode }: { promoCode: HomepageData['promoCode'] }) {
   return (
     <section className="lg:hidden bg-white px-4 pb-2 pt-4">
       <div className="rounded-2xl overflow-hidden" style={{ background: '#F5F1EB' }}>
@@ -78,9 +84,11 @@ function MobileHero() {
           <h2 className="mt-2 text-[20px] font-extrabold leading-tight text-ink">
             Up to 50% Off<br />On First Booking!
           </h2>
-          <p className="mt-1 text-[12px] text-muted">
-            Use code <strong className="text-accent">URBAN50</strong>
-          </p>
+          {promoCode && (
+            <p className="mt-1 text-[12px] text-muted">
+              Use code <strong className="text-accent">{promoCode.code}</strong>
+            </p>
+          )}
           <div className="mt-3 h-32 w-full rounded-xl bg-hairline/40" />
         </div>
       </div>
@@ -90,30 +98,27 @@ function MobileHero() {
 
 /* ── Quick Service Grid (4x2) ──────────────────────────── */
 
-const quickServices = [
-  { icon: Sparkles, label: 'Massage', color: '#C1622E' },
-  { icon: Sparkles, label: "Women's Salon", color: '#6B8F6B' },
-  { icon: Wind, label: 'AC Repair', color: '#1F3A4D' },
-  { icon: Bug, label: 'Cleaning', color: '#D9A441' },
-  { icon: PaintBucket, label: 'Painting', color: '#C1622E' },
-  { icon: Wrench, label: 'Appliance', color: '#6B8F6B' },
-  { icon: Zap, label: 'Electrician', color: '#1F3A4D' },
-  { icon: Grid3X3, label: 'All Services', color: '#6B6A62' },
-];
+function QuickServiceGrid({ categories }: { categories: HomepageCategory[] }) {
+  const tiles = categories.slice(0, 7).map((cat) => ({
+    icon: cat.iconComponent,
+    label: cat.name,
+    href: `/services?category=${cat.slug}`,
+    color: ['#C1622E', '#6B8F6B', '#1F3A4D', '#D9A441', '#C1622E', '#6B8F6B', '#1F3A4D'][categories.indexOf(cat) % 7] ?? '#6B6A62',
+  }));
+  tiles.push({ icon: Grid3X3, label: 'All Services', href: '/services', color: '#6B6A62' });
 
-function QuickServiceGrid() {
   return (
     <section className="lg:hidden bg-white px-4 py-4">
       <div className="grid grid-cols-4 gap-3">
-        {quickServices.map((s) => {
+        {tiles.map((s) => {
           const Icon = s.icon;
           return (
-            <a key={s.label} href="#" className="flex flex-col items-center gap-1.5">
+            <Link key={s.label} href={s.href} className="flex flex-col items-center gap-1.5">
               <span className="grid h-11 w-11 place-items-center rounded-xl" style={{ background: `${s.color}12` }}>
                 <Icon className="h-5 w-5" style={{ color: s.color }} />
               </span>
               <span className="text-[10px] font-semibold text-center leading-tight text-ink">{s.label}</span>
-            </a>
+            </Link>
           );
         })}
       </div>
@@ -123,35 +128,39 @@ function QuickServiceGrid() {
 
 /* ── Horizontal Scroll Section ──────────────────────────── */
 
-function HorizScroll({ title, items }: {
+function HorizScroll({ title, items, showPrice, showRating }: {
   title: string;
-  items: { name: string; desc?: string; price?: string; rating?: string; reviews?: string; image?: boolean }[];
+  items: HomepageService[];
+  showPrice?: boolean;
+  showRating?: boolean;
 }) {
+  if (items.length === 0) return null;
+
   return (
     <section className="lg:hidden bg-white pb-2 pt-4">
       <div className="mb-3 flex items-center justify-between px-4">
         <h3 className="text-[16px] font-extrabold text-ink">{title}</h3>
-        <a href="#" className="flex items-center gap-0.5 text-[12px] font-semibold text-accent">
+        <a href="/services" className="flex items-center gap-0.5 text-[12px] font-semibold text-accent">
           See all <ArrowRight className="h-3.5 w-3.5" />
         </a>
       </div>
       <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2" style={{ scrollbarWidth: 'none' }}>
         {items.map((item) => (
-          <div key={item.name} className="w-36 shrink-0 snap-start">
+          <Link key={item.id} href={`/services?category=${item.categorySlug}`} className="w-36 shrink-0 snap-start">
             <div className="h-24 w-full rounded-xl bg-hairline/40" />
             <div className="mt-2">
-              <span className="text-[12px] font-bold text-ink">{item.name}</span>
-              {item.desc && <p className="text-[10px] text-muted">{item.desc}</p>}
-              {item.rating && (
+              <span className="text-[12px] font-bold text-ink">{item.title}</span>
+              {item.categoryName && <p className="text-[10px] text-muted">{item.categoryName}</p>}
+              {showRating && item.rating && (
                 <div className="mt-0.5 flex items-center gap-1">
                   <Star className="h-3 w-3 fill-amber text-amber" />
                   <span className="text-[10px] font-semibold text-muted">{item.rating}</span>
-                  {item.reviews && <span className="text-[9px] text-muted">({item.reviews})</span>}
+                  {item.reviewCount && <span className="text-[9px] text-muted">({item.reviewCount})</span>}
                 </div>
               )}
-              {item.price && <span className="text-[13px] font-extrabold text-ink">{item.price}</span>}
+              {showPrice && <span className="text-[13px] font-extrabold text-ink">{pence(item.pricePence)}</span>}
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </section>
@@ -216,29 +225,36 @@ function StackedPromos() {
 
 /* ── Categorized Lists ──────────────────────────────────── */
 
-function CategorizedLists() {
+function CategorizedLists({ trending }: { trending: HomepageService[] }) {
+  if (trending.length === 0) return null;
+
+  const groups: Record<string, HomepageService[]> = {};
+  for (const s of trending) {
+    if (!groups[s.categoryName]) groups[s.categoryName] = [];
+    groups[s.categoryName].push(s);
+  }
+
+  const entries = Object.entries(groups).slice(0, 2);
+
   return (
     <section className="lg:hidden bg-white space-y-6 px-4 py-4">
-      {[
-        { title: 'Cleaning Essentials', items: ['Sofa Dry Cleaning - £249', 'Kitchen Degreasing - £599', 'Bathroom Deep Clean - £399'] },
-        { title: 'Appliance Repair & Service', items: ['Refrigerator Fix - £199', 'Washing Machine - £299', 'AC Service - £349'] },
-      ].map((cat) => (
-        <div key={cat.title}>
+      {entries.length === 0 ? null : entries.map(([catTitle, items]) => (
+        <div key={catTitle}>
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-[16px] font-extrabold text-ink">{cat.title}</h3>
-            <a href="#" className="flex items-center gap-0.5 text-[12px] font-semibold text-accent">
+            <h3 className="text-[16px] font-extrabold text-ink">{catTitle}</h3>
+            <a href={`/services?category=${items[0]?.categorySlug ?? ''}`} className="flex items-center gap-0.5 text-[12px] font-semibold text-accent">
               See all <ArrowRight className="h-3.5 w-3.5" />
             </a>
           </div>
           <div className="space-y-3">
-            {cat.items.map((item) => (
-              <div key={item} className="flex items-center gap-3">
+            {items.map((item) => (
+              <Link key={item.id} href={`/services?category=${item.categorySlug}`} className="flex items-center gap-3">
                 <div className="h-16 w-16 shrink-0 rounded-xl bg-hairline/40" />
                 <div>
-                  <span className="text-[13px] font-bold text-ink">{item.split(' - ')[0]}</span>
-                  <p className="text-[13px] font-extrabold text-ink">{item.split(' - ')[1]}</p>
+                  <span className="text-[13px] font-bold text-ink">{item.title}</span>
+                  <p className="text-[13px] font-extrabold text-ink">{pence(item.pricePence)}</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -270,6 +286,33 @@ function ReferralCard() {
   );
 }
 
+/* ── Testimonials (mobile) ──────────────────────────────── */
+
+function MobileTestimonials({ reviews }: { reviews: HomepageReview[] }) {
+  if (reviews.length === 0) return null;
+  const stars = (n: number) => '★'.repeat(n) + '☆'.repeat(5 - n);
+
+  return (
+    <section className="lg:hidden bg-white px-4 py-4">
+      <h3 className="mb-3 text-[16px] font-extrabold text-ink">What customers say</h3>
+      <div className="space-y-3">
+        {reviews.slice(0, 2).map((r) => (
+          <div key={r.id} className="rounded-xl border border-hairline p-4">
+            <div className="text-[14px] tracking-[2px]" style={{ color: '#D9A441' }}>
+              {stars(r.rating)}
+            </div>
+            <p className="mt-2 text-[12px] leading-relaxed text-ink">{r.comment}</p>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-[13px] font-bold text-ink">{r.authorName}</span>
+              <span className="text-[10px] text-muted">{r.location}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /* ── Mobile Footer ──────────────────────────────────────── */
 
 function MobileFooter() {
@@ -283,13 +326,11 @@ function MobileFooter() {
   return (
     <footer className="lg:hidden pb-20" style={{ background: '#1F3A4D' }}>
       <div className="px-4 py-8">
-        {/* Logo + name */}
         <div className="mb-6 flex items-center gap-2.5">
           <span className="block h-9 w-9 rounded-[9px] border border-white/20 bg-hairline/20" />
           <span className="text-[15px] font-extrabold text-[#F5F1EB]">Urban Assist</span>
         </div>
 
-        {/* Accordion links */}
         {Object.entries(sections).map(([heading, links]) => {
           const isOpen = open === heading;
           return (
@@ -314,7 +355,6 @@ function MobileFooter() {
           );
         })}
 
-        {/* Social icons */}
         <div className="mt-6 flex gap-4">
           {['f', 't', 'i', 'in'].map((s) => (
             <a key={s} href="#" className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-[11px] font-bold text-white/70">
@@ -323,7 +363,6 @@ function MobileFooter() {
           ))}
         </div>
 
-        {/* App buttons */}
         <div className="mt-4 flex gap-3">
           <a href="#" className="flex-1 rounded-xl bg-white/10 px-4 py-2.5 text-center text-[12px] font-bold text-white backdrop-blur">
             App Store
@@ -333,7 +372,6 @@ function MobileFooter() {
           </a>
         </div>
 
-        {/* Copyright */}
         <p className="mt-6 text-[10px] text-[#7E93A0] text-center">
           &copy; 2026 Urban Assist Private Limited.
         </p>
@@ -342,34 +380,23 @@ function MobileFooter() {
   );
 }
 
-/* ── Exported MobileHome → renders all mobile sections ──── */
+/* ── Exported MobileHome ────────────────────────────────── */
 
-export function MobileHome() {
+export function MobileHome({ data }: MobileHomeProps) {
+  const { categories, reviews, trending, mostBooked, promoCode } = data;
+
   return (
     <>
       <MobileHeader />
-      <MobileHero />
-      <QuickServiceGrid />
-      <HorizScroll title="Trending Near You" items={[
-        { name: 'Instant Appliance Repair', image: true },
-        { name: 'Professional Deep Cleaning', image: true },
-        { name: 'AC Service & Repair', image: true },
-        { name: 'Bathroom Waterproofing', image: true },
-      ]} />
+      <MobileHero promoCode={promoCode} />
+      <QuickServiceGrid categories={categories} />
+      <HorizScroll title="Trending Near You" items={trending.slice(0, 4)} showRating />
       <Spotlight />
-      <HorizScroll title="New and Noteworthy" items={[
-        { name: 'Smart Water Purifier', price: '£299' },
-        { name: 'Electronic Gas Hob', price: '£199' },
-        { name: 'Secure Smart Door Lock', price: '£149' },
-        { name: 'Air Purifier', price: '£249' },
-      ]} />
-      <HorizScroll title="Most Booked Services" items={[
-        { name: 'Bathroom Deep Cleaning', rating: '4.9', reviews: '240k', price: '£399' },
-        { name: 'AC Jet Max Service', rating: '4.8', reviews: '120k', price: '£499' },
-        { name: 'Full Home Cleaning', rating: '4.9', reviews: '180k', price: '£599' },
-      ]} />
+      <HorizScroll title="New and Noteworthy" items={trending.slice(2, 6)} showPrice />
+      <HorizScroll title="Most Booked Services" items={mostBooked.slice(0, 3)} showPrice showRating />
       <StackedPromos />
-      <CategorizedLists />
+      <CategorizedLists trending={trending} />
+      <MobileTestimonials reviews={reviews} />
       <ReferralCard />
       <MobileFooter />
       <BottomNav />

@@ -1,26 +1,15 @@
-const reviews = [
-  {
-    name: 'Sarah M.',
-    location: 'London',
-    rating: 5,
-    text: 'The cleaning service was outstanding. Professional, punctual, and they left my flat spotless. Will definitely book again.',
-  },
-  {
-    name: 'James K.',
-    location: 'Manchester',
-    rating: 5,
-    text: 'Had my washing machine repaired within 2 hours of booking. The engineer was knowledgeable and friendly. Fair price too.',
-  },
-  {
-    name: 'Priya R.',
-    location: 'Birmingham',
-    rating: 4,
-    text: 'Great service for AC installation. The team was efficient and cleaned up after themselves. Slight delay but they communicated well.',
-  },
-];
+import type { HomepageReview } from '../lib/homepage-data';
 
-export function Testimonials() {
-  const stars = (n: number) => '★'.repeat(n) + '☆'.repeat(5 - n);
+interface TestimonialsProps {
+  reviews: HomepageReview[];
+}
+
+function stars(n: number) {
+  return '★'.repeat(n) + '☆'.repeat(5 - n);
+}
+
+export function Testimonials({ reviews }: TestimonialsProps) {
+  if (reviews.length === 0) return null;
 
   return (
     <section className="bg-bg py-12">
@@ -32,14 +21,14 @@ export function Testimonials() {
           Trusted by thousands of UK households
         </p>
         <div className="grid gap-6 md:grid-cols-3">
-          {reviews.map((r) => (
-            <div key={r.name} className="card-shadow card rounded-xl p-6">
+          {reviews.slice(0, 3).map((r) => (
+            <div key={r.id} className="card-shadow card rounded-xl p-6">
               <div className="text-[18px] tracking-[2px]" style={{ color: '#D9A441' }}>
                 {stars(r.rating)}
               </div>
-              <p className="mt-3 text-[13px] leading-relaxed text-ink">{r.text}</p>
+              <p className="mt-3 text-[13px] leading-relaxed text-ink">{r.comment}</p>
               <div className="mt-4 border-t border-hairline pt-3">
-                <span className="text-[14px] font-bold text-ink">{r.name}</span>
+                <span className="text-[14px] font-bold text-ink">{r.authorName}</span>
                 <span className="ml-2 text-[12px] text-muted">{r.location}</span>
               </div>
             </div>

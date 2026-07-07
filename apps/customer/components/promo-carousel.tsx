@@ -1,6 +1,20 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import type { HomepageData } from '../lib/homepage-data';
+import { pence } from '@urban-assist/lib';
 
-export function PromoCarousel() {
+interface PromoCarouselProps {
+  promoCode: HomepageData['promoCode'];
+}
+
+export function PromoCarousel({ promoCode }: PromoCarouselProps) {
+  const discountLabel = promoCode
+    ? promoCode.discountType === 'percent'
+      ? `Save ${promoCode.discountValue}%`
+      : `Save ${pence(promoCode.discountValue)}`
+    : 'Save 20%';
+
+  const code = promoCode?.code ?? 'URBAN20';
+
   return (
     <section className="bg-white py-10">
       <div className="mx-auto max-w-page px-6">
@@ -8,7 +22,6 @@ export function PromoCarousel() {
           className="relative flex items-center justify-between overflow-hidden rounded-2xl px-10 py-8"
           style={{ background: '#E4D4C4' }}
         >
-          {/* Left arrow */}
           <button
             className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/60 text-ink backdrop-blur transition hover:bg-white/90"
             aria-label="Previous offer"
@@ -21,10 +34,10 @@ export function PromoCarousel() {
               Limited offer
             </span>
             <h3 className="mt-3 text-[22px] font-extrabold text-ink">
-              Save 20% on your first booking
+              {discountLabel} on your first booking
             </h3>
             <p className="mt-2 text-[13px] text-muted">
-              Use code <strong className="text-accent">URBAN20</strong> at checkout.
+              Use code <strong className="text-accent">{code}</strong> at checkout.
               Valid for new customers only. Terms apply.
             </p>
             <a
@@ -35,7 +48,6 @@ export function PromoCarousel() {
             </a>
           </div>
 
-          {/* Right arrow */}
           <button
             className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/60 text-ink backdrop-blur transition hover:bg-white/90"
             aria-label="Next offer"
@@ -43,7 +55,6 @@ export function PromoCarousel() {
             <ChevronRight className="h-5 w-5" />
           </button>
 
-          {/* Carousel dots */}
           <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
             <span className="h-2 w-2 rounded-full bg-accent" />
             <span className="h-2 w-2 rounded-full bg-hairline" />

@@ -110,26 +110,31 @@ Apps boot with console warnings for any missing SDK keys — you can start with 
 ## Infrastructure Setup
 
 ### 1. Supabase (Required)
+
 1. Create a project at [app.supabase.com](https://app.supabase.com)
 2. Copy URL + anon key + service role key into each app's `.env`
 3. Run `pnpm db:migrate` to apply the schema, RLS policies, triggers, and seed data
 
 ### 2. Stripe (Required for payments)
+
 1. Get test keys from [dashboard.stripe.com/apikeys](https://dashboard.stripe.com/apikeys)
 2. Add `STRIPE_SECRET_KEY` and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` to each app's `.env`
 3. Configure a webhook endpoint pointing to `/api/stripe/webhook` on the customer app
 4. Set `STRIPE_WEBHOOK_SECRET` from the webhook endpoint settings
 
 ### 3. Upstash Redis (Optional — rate limiting & caching)
+
 1. Create a Redis database at [console.upstash.com](https://console.upstash.com)
 2. Add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`
 
 ### 4. Firebase (Optional — push notifications)
+
 1. Create a project at [console.firebase.google.com](https://console.firebase.google.com)
 2. Enable Cloud Messaging; get VAPID key from Web Push Certificates
 3. Download service account JSON for server-side sending
 
 ### 5. Google Maps (Optional — address autocomplete & map views)
+
 1. Enable Maps JavaScript API + Places API in [Google Cloud Console](https://console.cloud.google.com)
 2. Add `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
 
@@ -154,4 +159,5 @@ Apps boot with console warnings for any missing SDK keys — you can start with 
 - **Stripe Connect payouts deferred** — the `payouts` table exists and the earnings UI shows balances, but the actual onboarding/transfer flow is stubbed in `packages/lib/src/stripe/payouts.ts` with a clearly marked `TODO`.
 - **Admin app** — scoped to KYC review queue + booking overview + support tickets for V1. Full assignment engine is manual via Supabase dashboard in Phase 1.
 - **No Firebase Firestore** — real-time booking status uses Supabase Realtime instead, simplifying the stack while keeping the option open for Phase 2.
+
 # Urban-assist

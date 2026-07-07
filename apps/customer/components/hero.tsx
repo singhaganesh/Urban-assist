@@ -1,5 +1,5 @@
-import { MapPin } from 'lucide-react';
 import type { HomepageCategory, HomepageData } from '../lib/homepage-data';
+import { getCategoryIcon } from '../lib/homepage-data';
 import { pence } from '@urban-assist/lib';
 
 interface HeroProps {
@@ -42,7 +42,7 @@ export function Hero({ categories, promoCode }: HeroProps) {
               <h2 className="mb-4 text-[15px] font-bold text-ink">What are you looking for?</h2>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {categories.slice(0, 8).map((cat) => {
-                  const Icon = cat.iconComponent;
+                  const Icon = getCategoryIcon(cat.icon);
                   const color = tileColors[cat.icon] ?? '#C1622E';
                   return (
                     <a

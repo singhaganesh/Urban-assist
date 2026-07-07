@@ -1,5 +1,5 @@
 'use client';
-import { MapPin, Search, ChevronDown, Wrench, Sparkles, PaintBucket, Bug, Zap, Shirt, Wind, Shovel, Grid3X3, Star, ArrowRight, Gift, ChevronRight, Home, CalendarClock, Wallet, User, ChevronUp } from 'lucide-react';
+import { MapPin, Search, ChevronDown, Grid3X3, Star, ArrowRight, Gift, Home, CalendarClock, Wallet, User, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
 import type { HomepageData, HomepageCategory, HomepageService, HomepageReview } from '../lib/homepage-data';
@@ -100,7 +100,7 @@ function MobileHero({ promoCode }: { promoCode: HomepageData['promoCode'] }) {
 
 function QuickServiceGrid({ categories }: { categories: HomepageCategory[] }) {
   const tiles = categories.slice(0, 7).map((cat) => ({
-    icon: cat.iconComponent,
+    icon: getCategoryIcon(cat.icon),
     label: cat.name,
     href: `/services?category=${cat.slug}`,
     color: ['#C1622E', '#6B8F6B', '#1F3A4D', '#D9A441', '#C1622E', '#6B8F6B', '#1F3A4D'][categories.indexOf(cat) % 7] ?? '#6B6A62',

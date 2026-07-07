@@ -1,19 +1,7 @@
 import { getSupabaseServer } from '@urban-assist/db/server';
-import {
-  Sparkles,
-  Wrench,
-  Zap,
-  Leaf,
-  Settings,
-  Hammer,
-  Paintbrush,
-  Lock,
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { Sparkles, Wrench, Zap, Leaf, Settings, Hammer, Paintbrush, Lock } from 'lucide-react';
 
-/* ── Icon mapping: DB icon string → lucide component ──── */
-
-const iconMap: Record<string, LucideIcon> = {
+const iconMap: Record<string, typeof Sparkles> = {
   sparkles: Sparkles,
   wrench: Wrench,
   zap: Zap,
@@ -24,7 +12,7 @@ const iconMap: Record<string, LucideIcon> = {
   lock: Lock,
 };
 
-export function getCategoryIcon(iconName: string): LucideIcon {
+export function getCategoryIcon(iconName: string) {
   return iconMap[iconName] ?? Wrench;
 }
 
@@ -35,7 +23,6 @@ export interface HomepageCategory {
   slug: string;
   name: string;
   icon: string;
-  iconComponent: LucideIcon;
   description: string;
   minPricePence: number;
   maxPricePence: number;
@@ -73,14 +60,14 @@ export interface HomepageData {
 /* ── Static fallback data (demo, DB empty) ──────────────── */
 
 const FALLBACK_CATEGORIES: HomepageCategory[] = [
-  { id: '1', slug: 'cleaning', name: 'Home cleaning', icon: 'sparkles', iconComponent: Sparkles, description: 'Regular and deep cleaning for homes and flats', minPricePence: 1500, maxPricePence: 15000, sortOrder: 1 },
-  { id: '2', slug: 'plumbing', name: 'Plumbing', icon: 'wrench', iconComponent: Wrench, description: 'Leaks, blockages, installations and repairs', minPricePence: 3500, maxPricePence: 30000, sortOrder: 2 },
-  { id: '3', slug: 'electrical', name: 'Electrical', icon: 'zap', iconComponent: Zap, description: 'Certified electrical work and safety checks', minPricePence: 4000, maxPricePence: 40000, sortOrder: 3 },
-  { id: '4', slug: 'gardening', name: 'Gardening', icon: 'leaf', iconComponent: Leaf, description: 'Lawn care, hedge trimming and garden tidy-ups', minPricePence: 2000, maxPricePence: 20000, sortOrder: 4 },
-  { id: '5', slug: 'appliance-repair', name: 'Appliance repair', icon: 'settings', iconComponent: Settings, description: 'Washing machines, ovens, fridges and dryers', minPricePence: 3500, maxPricePence: 25000, sortOrder: 5 },
-  { id: '6', slug: 'handyman', name: 'Handyman', icon: 'hammer', iconComponent: Hammer, description: 'Small jobs around the house', minPricePence: 2500, maxPricePence: 20000, sortOrder: 6 },
-  { id: '7', slug: 'painting', name: 'Painting & decor', icon: 'paintbrush', iconComponent: Paintbrush, description: 'Interior and exterior decorating', minPricePence: 4000, maxPricePence: 50000, sortOrder: 7 },
-  { id: '8', slug: 'locksmith', name: 'Locksmith', icon: 'lock', iconComponent: Lock, description: 'Lock-outs, lock changes and security upgrades', minPricePence: 5000, maxPricePence: 30000, sortOrder: 8 },
+  { id: '1', slug: 'cleaning', name: 'Home cleaning', icon: 'sparkles', description: 'Regular and deep cleaning for homes and flats', minPricePence: 1500, maxPricePence: 15000, sortOrder: 1 },
+  { id: '2', slug: 'plumbing', name: 'Plumbing', icon: 'wrench', description: 'Leaks, blockages, installations and repairs', minPricePence: 3500, maxPricePence: 30000, sortOrder: 2 },
+  { id: '3', slug: 'electrical', name: 'Electrical', icon: 'zap', description: 'Certified electrical work and safety checks', minPricePence: 4000, maxPricePence: 40000, sortOrder: 3 },
+  { id: '4', slug: 'gardening', name: 'Gardening', icon: 'leaf', description: 'Lawn care, hedge trimming and garden tidy-ups', minPricePence: 2000, maxPricePence: 20000, sortOrder: 4 },
+  { id: '5', slug: 'appliance-repair', name: 'Appliance repair', icon: 'settings', description: 'Washing machines, ovens, fridges and dryers', minPricePence: 3500, maxPricePence: 25000, sortOrder: 5 },
+  { id: '6', slug: 'handyman', name: 'Handyman', icon: 'hammer', description: 'Small jobs around the house', minPricePence: 2500, maxPricePence: 20000, sortOrder: 6 },
+  { id: '7', slug: 'painting', name: 'Painting & decor', icon: 'paintbrush', description: 'Interior and exterior decorating', minPricePence: 4000, maxPricePence: 50000, sortOrder: 7 },
+  { id: '8', slug: 'locksmith', name: 'Locksmith', icon: 'lock', description: 'Lock-outs, lock changes and security upgrades', minPricePence: 5000, maxPricePence: 30000, sortOrder: 8 },
 ];
 
 const FALLBACK_REVIEWS: HomepageReview[] = [
@@ -118,7 +105,6 @@ async function fetchCategories(): Promise<HomepageCategory[]> {
         slug: c.slug,
         name: c.name,
         icon: c.icon,
-        iconComponent: getCategoryIcon(c.icon),
         description: c.description ?? '',
         minPricePence: c.min_price_pence,
         maxPricePence: c.max_price_pence,

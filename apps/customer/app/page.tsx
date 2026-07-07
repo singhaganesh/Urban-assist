@@ -7,21 +7,30 @@ import { WhyUs } from '../components/why-us';
 import { Testimonials } from '../components/testimonials';
 import { AppCTA } from '../components/app-cta';
 import { Footer } from '../components/footer';
+import { MobileHome } from '../components/mobile-home';
 
 export default function LandingPage() {
   return (
     <>
-      <Header />
-      <main>
-        <Hero />
-        <CategoryGrid />
-        <PromoCarousel />
-        <FeaturedServices />
-        <WhyUs />
-        <Testimonials />
-        <AppCTA />
-      </main>
-      <Footer />
+      {/* Mobile layout */}
+      <div className="lg:hidden">
+        <MobileHome />
+      </div>
+
+      {/* Desktop layout */}
+      <div className="hidden lg:block">
+        <Header />
+        <main>
+          <Hero />
+          <CategoryGrid />
+          <PromoCarousel />
+          <FeaturedServices />
+          <WhyUs />
+          <Testimonials />
+          <AppCTA />
+        </main>
+        <Footer />
+      </div>
     </>
   );
 }

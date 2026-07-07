@@ -35,16 +35,8 @@ export function CategoryGrid() {
                 className="group card-shadow card overflow-hidden rounded-xl transition hover:border-accent"
                 style={{ borderColor: '#ECE6D9' }}
               >
-                {/* Image placeholder */}
-                <div
-                  className="flex h-36 items-center justify-center"
-                  style={{
-                    background:
-                      'repeating-linear-gradient(135deg, #EDE6D8, #EDE6D8 10px, #E4DBC9 10px, #E4DBC9 20px)',
-                  }}
-                >
-                  <Icon className="h-8 w-8 text-[#8A8574]/40" />
-                </div>
+                {/* Image placeholder (blank) */}
+                <div className="h-36 bg-hairline/30" />
                 {/* Badge */}
                 <div className="relative px-3 pb-3 pt-2">
                   {cat.tag && (

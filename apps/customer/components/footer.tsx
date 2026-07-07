@@ -14,12 +14,7 @@ export function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2.5">
-              <span
-                className="grid h-9 w-9 place-items-center rounded-[9px] text-[15px] font-extrabold leading-none text-white"
-                style={{ background: '#1F3A4D', border: '1px solid rgba(245,241,235,0.2)' }}
-              >
-                UA
-              </span>
+              <span className="block h-9 w-9 rounded-[9px] border border-white/20 bg-hairline/20" />
               <span className="text-[15px] font-extrabold text-[#F5F1EB]">Urban Assist</span>
             </div>
             <p className="mt-4 text-[13px] leading-relaxed" style={{ color: '#9FB1BC' }}>

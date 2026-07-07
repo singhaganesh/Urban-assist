@@ -56,18 +56,9 @@ export function Hero() {
             </div>
           </div>
 
-          {/* Right: collage / placeholder */}
+          {/* Right: collage placeholder (blank) */}
           <div className="hidden w-full max-w-md lg:block">
-            <div
-              className="flex h-[420px] w-full items-center justify-center rounded-[18px]"
-              style={{
-                background: 'repeating-linear-gradient(135deg, #EDE6D8, #EDE6D8 10px, #E4DBC9 10px, #E4DBC9 20px)',
-              }}
-            >
-              <span className="px-4 text-center font-mono text-[12px] text-[#8A8574]">
-                Hero collage — photography
-              </span>
-            </div>
+            <div className="flex h-[420px] w-full items-center justify-center rounded-[18px] bg-hairline/40" />
           </div>
         </div>
       </div>

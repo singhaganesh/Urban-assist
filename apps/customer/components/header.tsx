@@ -5,14 +5,9 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-hairline bg-white">
       <div className="mx-auto flex max-w-page items-center gap-4 px-6 py-3">
-        {/* Logo */}
+        {/* Logo placeholder */}
         <Link href="/" className="flex shrink-0 items-center gap-2.5">
-          <span
-            className="grid h-9 w-9 place-items-center rounded-[9px] text-[15px] font-extrabold leading-none text-white"
-            style={{ background: '#1F3A4D' }}
-          >
-            UA
-          </span>
+          <span className="block h-9 w-9 rounded-[9px] bg-hairline" />
           <span className="hidden text-[15px] font-extrabold text-ink sm:inline">
             Urban Assist
           </span>

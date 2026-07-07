@@ -3,14 +3,14 @@ import './globals.css';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'HomeEase — Book trusted home services',
+  title: 'Urban Assist — Home Services in the UK',
   description:
-    'UK home services on demand — cleaning, plumbing, electrical, gardening and more.',
+    'Book trusted home services across the UK — cleaning, repair, installation, and more. Verified professionals, transparent pricing.',
   manifest: '/manifest.webmanifest',
 };
 
 export const viewport: Viewport = {
-  themeColor: '#FAFAF8',
+  themeColor: '#F5F1EB',
   width: 'device-width',
   initialScale: 1,
 };
@@ -19,9 +19,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-GB">
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap"
         />
       </head>
       <body>

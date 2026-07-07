@@ -4,13 +4,20 @@
 
 @layer base {
   :root {
-    --bg: 250 250 248;          /* Chalk White  #FAFAF8 */
-    --ink: 28 32 36;            /* Slate Ink    #1C2024 */
-    --accent: 232 163 61;       /* Signal Amber #E8A33D */
-    --success: 47 107 79;       /* Deep Forest  #2F6B4F */
-    --danger: 193 67 43;        /* Brick        #C1432B */
-    --muted: 139 141 145;       /* Stone        #8B8D91 */
-    --hairline: 226 226 222;
+    --bg: 245 241 235;          /* Warm Stone  #F5F1EB */
+    --ink: 31 58 77;            /* Slate Navy  #1F3A4D — headings, prices, nav */
+    --charcoal: 43 43 40;       /* Charcoal    #2B2B28 — body text */
+    --accent: 193 98 46;        /* Terracotta  #C1622E — primary CTAs */
+    --accent-hover: 169 83 31;  /* Terracotta hover #A9531F */
+    --success: 107 143 107;     /* Sage Green  #6B8F6B — verified, badges */
+    --danger: 178 58 46;        /* Rust Red    #B23A2E — urgent/error */
+    --amber: 217 164 65;        /* Amber       #D9A441 — star ratings */
+    --muted: 107 106 98;        /* Muted text  #6B6A62 */
+    --hairline: 236 230 217;    /* Card border #ECE6D9 */
+    --input-border: 226 218 203;/* Input/tile border #E2DACB */
+    --footer-muted: 159 177 188; /* #9FB1BC */
+    --footer-faint: 126 147 160; /* #7E93A0 */
+    --card-radius: 14px;
   }
 
   html {
@@ -21,11 +28,10 @@
 
   body {
     background: rgb(var(--bg));
-    color: rgb(var(--ink));
-    font-family: '"Public Sans"', system-ui, sans-serif;
+    color: rgb(var(--charcoal));
+    font-family: 'Inter', system-ui, sans-serif;
   }
 
-  /* Strong visible keyboard focus — accessibility floor (§5). */
   :focus-visible {
     outline: 2px solid rgb(var(--accent));
     outline-offset: 2px;
@@ -33,22 +39,18 @@
   }
 
   ::selection {
-    background: rgb(var(--accent) / 0.3);
+    background: rgb(var(--accent) / 0.25);
   }
 }
 
 @layer utilities {
-  .font-mono-utility {
-    font-family: '"JetBrains Mono"', ui-monospace, monospace;
-    font-size: 0.78rem;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-  }
   .card {
-    @apply rounded-xl border border-hairline bg-white p-5;
+    @apply rounded-[var(--card-radius)] border border-hairline bg-white;
+  }
+  .card-shadow {
+    box-shadow: 0 4px 14px rgba(31, 58, 77, 0.05);
   }
   .tap {
-    /* mobile minimum tap target */
     min-height: 44px;
     min-width: 44px;
   }

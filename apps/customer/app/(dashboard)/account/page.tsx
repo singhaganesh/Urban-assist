@@ -3,7 +3,8 @@ import * as React from 'react';
 import { Card, Button, Badge, Field, Input } from '@urban-assist/ui';
 import { getSupabaseBrowser as supabase } from '@urban-assist/db/browser';
 import { formatUkPhone } from '@urban-assist/lib';
-import { User, Gift, MapPin, Heart, Shield, HelpCircle } from 'lucide-react';
+import { User, Gift, MapPin, Heart, Shield, HelpCircle, Plus, X } from 'lucide-react';
+import { AddressForm } from '../../../components/address-form';
 
 interface Address {
   id: string;
@@ -26,6 +27,7 @@ export default function AccountPage() {
   const [user, setUser] = React.useState<any>(null);
   const [profile, setProfile] = React.useState<any>(null);
   const [addresses, setAddresses] = React.useState<Address[]>([]);
+  const [addingAddress, setAddingAddress] = React.useState(false);
   const [favorites, setFavorites] = React.useState<Favorite[]>([]);
   const [referralCode, setReferralCode] = React.useState<string | null>(null);
 
@@ -225,14 +227,44 @@ export default function AccountPage() {
         {addresses.length ? (
           <ul className="space-y-2 text-sm">
             {addresses.map((a) => (
-              <li key={a.id} className="text-xs sm:text-sm">
-                <span className="font-medium">{a.label}</span>
-                <span className="text-muted"> — {[a.line1, a.city, a.postcode].filter(Boolean).join(', ')}</span>
+              <li key={a.id} className="flex items-center justify-between gap-2 text-xs sm:text-sm">
+                <div>
+                  <span className="font-medium">{a.label}</span>
+                  <span className="text-muted"> — {[a.line1, a.city, a.postcode].filter(Boolean).join(', ')}</span>
+                </div>
+                <button
+                  aria-label={`Delete ${a.label}`}
+                  className="shrink-0 rounded-full p-1 text-muted hover:bg-danger/10 hover:text-danger"
+                  onClick={async () => {
+                    if (!window.confirm(`Delete "${a.label}"?`)) return;
+                    const { error } = await supabase().from('addresses').delete().eq('id', a.id);
+                    if (!error) setAddresses((cur) => cur.filter((x) => x.id !== a.id));
+                    else alert('Could not delete — it may be linked to a booking.');
+                  }}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-xs text-muted">No saved addresses yet. Add one during checkout.</p>
+          <p className="text-xs text-muted">No saved addresses yet.</p>
+        )}
+        {addingAddress ? (
+          <AddressForm
+            onAdded={async () => {
+              setAddingAddress(false);
+              const { data: { user: u } } = await supabase().auth.getUser();
+              if (!u) return;
+              const { data: addr } = await supabase().from('addresses').select('*').eq('profile_id', u.id);
+              setAddresses(addr ?? []);
+            }}
+            onCancel={() => setAddingAddress(false)}
+          />
+        ) : (
+          <Button size="sm" variant="outline" onClick={() => setAddingAddress(true)}>
+            <Plus className="mr-1 h-3.5 w-3.5" /> Add address
+          </Button>
         )}
       </Card>
 

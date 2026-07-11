@@ -49,7 +49,7 @@ export function ServiceSearch({ inputClassName = 'bg-white' }: { inputClassName?
           {results.map((s) => (
             <li key={`${s.categorySlug}-${s.id}`}>
               <Link
-                href={`/browse?category=${s.categorySlug}&q=${encodeURIComponent(s.name)}`}
+                href={`/services/${s.categorySlug}/${s.slug}`}
                 className="flex items-center justify-between px-4 py-2.5 text-[13px] hover:bg-bg"
               >
                 <span className="font-semibold text-ink">{s.name}</span>

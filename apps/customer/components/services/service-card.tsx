@@ -9,13 +9,11 @@ interface ServiceCardProps {
   icon?: string;
 }
 
-// ponytail: card links to the authed /browse listing (login wall to book).
-// Swap to a per-service provider list when provider_services are keyed by service slug.
 export function ServiceCard({ service, categorySlug, icon }: ServiceCardProps) {
   const Icon = getCategoryIcon(service.icon ?? icon ?? 'sparkles');
   return (
     <Link
-      href={`/browse?category=${categorySlug}&q=${encodeURIComponent(service.name)}`}
+      href={`/services/${categorySlug}/${service.slug}`}
       className="card card-shadow group flex flex-col rounded-xl border border-hairline p-4 transition hover:border-accent"
     >
       <span className="grid h-9 w-9 place-items-center rounded-lg bg-ink/5">

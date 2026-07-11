@@ -13,6 +13,7 @@ export {
   confirmCashPayment,
   retryMatching,
   cancelBooking,
+  rescheduleBooking,
   updateJobStatus,
 } from './bookings';
 export type {

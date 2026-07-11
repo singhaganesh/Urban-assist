@@ -114,6 +114,29 @@ export function BookingDetail({ booking: initialBooking, payment: initialPayment
   }
 
   const cancellable = ['pending_match', 'unmatched', 'assigned'].includes(booking.status);
+  const reschedulable = ['pending_match', 'unmatched'].includes(booking.status);
+  const [reschedOpen, setReschedOpen] = React.useState(false);
+  const [reschedAt, setReschedAt] = React.useState('');
+
+  async function reschedule() {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/bookings/${booking.id}/reschedule`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ scheduled_at: new Date(reschedAt).toISOString() }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error === 'invalid_time' ? 'Pick a time in the future.' : 'Could not reschedule');
+      }
+      window.location.reload();
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div className="space-y-4 py-2">
@@ -190,7 +213,27 @@ export function BookingDetail({ booking: initialBooking, payment: initialPayment
 
       <Card className="space-y-2">
         <div className="text-xs font-mono-utility text-muted">When & where</div>
-        <p className="text-sm">{ukDateTime(booking.scheduled_at)}</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm">{ukDateTime(booking.scheduled_at)}</p>
+          {reschedulable && !reschedOpen && (
+            <Button variant="outline" size="sm" onClick={() => setReschedOpen(true)}>Reschedule</Button>
+          )}
+        </div>
+        {reschedOpen && (
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-hairline p-3">
+            <input
+              type="datetime-local"
+              className="tap rounded-xl border border-hairline bg-white px-3 py-2 text-sm"
+              min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)}
+              value={reschedAt}
+              onChange={(e) => setReschedAt(e.target.value)}
+            />
+            <Button size="sm" onClick={reschedule} disabled={busy || !reschedAt}>
+              {busy ? 'Saving…' : 'Confirm new time'}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setReschedOpen(false)}>Cancel</Button>
+          </div>
+        )}
         <p className="text-sm text-muted">
           {[booking.address?.line1, booking.address?.line2, booking.address?.city, booking.address?.postcode]
             .filter(Boolean)

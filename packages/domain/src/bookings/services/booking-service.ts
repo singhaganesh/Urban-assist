@@ -228,6 +228,49 @@ export async function cancelBooking(
   });
 }
 
+export interface RescheduleBookingInput {
+  bookingId: string;
+  userId: string;
+  scheduledAt: string;
+}
+
+// ponytail: reschedule only before a provider is attached — changing the time
+// under an assigned provider needs a consent loop we don't have yet. Assigned
+// customers cancel (free, full refund) and rebook instead.
+const RESCHEDULABLE_STATUSES = ['pending_match', 'unmatched'];
+
+export async function rescheduleBooking(
+  admin: SupabaseClient,
+  input: RescheduleBookingInput,
+): Promise<void> {
+  const when = new Date(input.scheduledAt);
+  if (Number.isNaN(when.getTime()) || when.getTime() < Date.now()) {
+    throw new Error('invalid_time');
+  }
+
+  const { data: booking, error: getErr } = await admin
+    .from('bookings')
+    .select('id, customer_id, status')
+    .eq('id', input.bookingId)
+    .single();
+  if (getErr || !booking) throw new Error('booking_not_found');
+  if (booking.customer_id !== input.userId) throw new Error('forbidden');
+  if (!RESCHEDULABLE_STATUSES.includes(booking.status)) throw new Error('not_reschedulable');
+
+  const { error: updateErr } = await admin
+    .from('bookings')
+    .update({ status: 'pending_match', scheduled_at: when.toISOString() })
+    .eq('id', input.bookingId)
+    .in('status', RESCHEDULABLE_STATUSES);
+  if (updateErr) throw new Error(updateErr.message);
+
+  // Unmatched bookings re-enter the matching queue at the new time.
+  if (booking.status === 'unmatched') {
+    await admin.from('booking_offers').delete().eq('booking_id', input.bookingId);
+    await sendNextOffer(admin, input.bookingId);
+  }
+}
+
 export interface UpdateJobStatusInput {
   bookingId: string;
   providerId: string;

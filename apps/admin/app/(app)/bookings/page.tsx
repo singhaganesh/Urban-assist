@@ -1,6 +1,5 @@
 import { getSupabaseServer } from '@urban-assist/db/server';
 import { Briefcase, ChevronRight } from 'lucide-react';
-import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 

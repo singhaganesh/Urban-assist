@@ -1,32 +1,9 @@
 import { getSupabaseServer } from '@urban-assist/db/server';
-import {
-  Sparkles,
-  Wrench,
-  Zap,
-  Leaf,
-  Settings,
-  Hammer,
-  Paintbrush,
-  Lock,
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { getCategoriesForHomepage } from './services-data';
 
-/* ── Icon mapping: DB icon string → lucide component ──── */
-
-const iconMap: Record<string, LucideIcon> = {
-  sparkles: Sparkles,
-  wrench: Wrench,
-  zap: Zap,
-  leaf: Leaf,
-  settings: Settings,
-  hammer: Hammer,
-  paintbrush: Paintbrush,
-  lock: Lock,
-};
-
-export function getCategoryIcon(iconName: string): LucideIcon {
-  return iconMap[iconName] ?? Wrench;
-}
+/* Icon resolution lives in the central taxonomy (services-data.ts) so the
+   homepage and the /services pages share one source of truth. */
+export { getCategoryIcon } from './services-data';
 
 /* ── Types ──────────────────────────────────────────────── */
 
@@ -71,17 +48,6 @@ export interface HomepageData {
 
 /* ── Static fallback data (demo, DB empty) ──────────────── */
 
-const FALLBACK_CATEGORIES: HomepageCategory[] = [
-  { id: '1', slug: 'cleaning', name: 'Home cleaning', icon: 'sparkles', description: 'Regular and deep cleaning for homes and flats', minPricePence: 1500, maxPricePence: 15000, sortOrder: 1 },
-  { id: '2', slug: 'plumbing', name: 'Plumbing', icon: 'wrench', description: 'Leaks, blockages, installations and repairs', minPricePence: 3500, maxPricePence: 30000, sortOrder: 2 },
-  { id: '3', slug: 'electrical', name: 'Electrical', icon: 'zap', description: 'Certified electrical work and safety checks', minPricePence: 4000, maxPricePence: 40000, sortOrder: 3 },
-  { id: '4', slug: 'gardening', name: 'Gardening', icon: 'leaf', description: 'Lawn care, hedge trimming and garden tidy-ups', minPricePence: 2000, maxPricePence: 20000, sortOrder: 4 },
-  { id: '5', slug: 'appliance-repair', name: 'Appliance repair', icon: 'settings', description: 'Washing machines, ovens, fridges and dryers', minPricePence: 3500, maxPricePence: 25000, sortOrder: 5 },
-  { id: '6', slug: 'handyman', name: 'Handyman', icon: 'hammer', description: 'Small jobs around the house', minPricePence: 2500, maxPricePence: 20000, sortOrder: 6 },
-  { id: '7', slug: 'painting', name: 'Painting & decor', icon: 'paintbrush', description: 'Interior and exterior decorating', minPricePence: 4000, maxPricePence: 50000, sortOrder: 7 },
-  { id: '8', slug: 'locksmith', name: 'Locksmith', icon: 'lock', description: 'Lock-outs, lock changes and security upgrades', minPricePence: 5000, maxPricePence: 30000, sortOrder: 8 },
-];
-
 const FALLBACK_REVIEWS: HomepageReview[] = [
   { id: 'r1', authorName: 'Sarah M.', location: 'London', rating: 5, comment: 'The cleaning service was outstanding. Professional, punctual, and they left my flat spotless.' },
   { id: 'r2', authorName: 'James K.', location: 'Manchester', rating: 5, comment: 'Had my washing machine repaired within 2 hours of booking. Fair price too.' },
@@ -103,30 +69,20 @@ const FALLBACK_MOST_BOOKED: HomepageService[] = [
 
 /* ── Fetch functions ────────────────────────────────────── */
 
+// Categories come from the central taxonomy (services-data.ts), not the DB,
+// so homepage slugs always resolve on /services/[category]. To add or rename a
+// category, edit SERVICE_CATEGORIES there — this stays in sync automatically.
 async function fetchCategories(): Promise<HomepageCategory[]> {
-  try {
-    const db = getSupabaseServer();
-    const { data } = await db
-      .from('service_categories')
-      .select('*')
-      .order('sort_order', { ascending: true });
-
-    if (data && data.length > 0) {
-      return data.map((c) => ({
-        id: c.id,
-        slug: c.slug,
-        name: c.name,
-        icon: c.icon,
-        description: c.description ?? '',
-        minPricePence: c.min_price_pence,
-        maxPricePence: c.max_price_pence,
-        sortOrder: c.sort_order,
-      }));
-    }
-  } catch {
-    // Supabase not available, fallback
-  }
-  return FALLBACK_CATEGORIES;
+  return getCategoriesForHomepage().map((c) => ({
+    id: c.id,
+    slug: c.slug,
+    name: c.name,
+    icon: c.icon,
+    description: c.description,
+    minPricePence: c.minPricePence,
+    maxPricePence: c.maxPricePence,
+    sortOrder: c.sortOrder,
+  }));
 }
 
 async function fetchReviews(): Promise<HomepageReview[]> {

@@ -1,5 +1,5 @@
 'use client';
-import { MapPin, Search, ChevronDown, Wrench, Sparkles, PaintBucket, Bug, Zap, Shirt, Wind, Shovel, Grid3X3, Star, ArrowRight, Gift, ChevronRight, Home, CalendarClock, Wallet, User, ChevronUp } from 'lucide-react';
+import { MapPin, Search, ChevronDown, Grid3X3, Star, ArrowRight, Gift, Home, CalendarClock, Wallet, User, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
 import type { HomepageData, HomepageCategory, HomepageService, HomepageReview } from '../lib/homepage-data';
@@ -102,7 +102,7 @@ function QuickServiceGrid({ categories }: { categories: HomepageCategory[] }) {
   const tiles = categories.slice(0, 7).map((cat) => ({
     icon: getCategoryIcon(cat.icon),
     label: cat.name,
-    href: `/services?category=${cat.slug}`,
+    href: `/services/${cat.slug}`,
     color: ['#C1622E', '#6B8F6B', '#1F3A4D', '#D9A441', '#C1622E', '#6B8F6B', '#1F3A4D'][categories.indexOf(cat) % 7] ?? '#6B6A62',
   }));
   tiles.push({ icon: Grid3X3, label: 'All Services', href: '/services', color: '#6B6A62' });
@@ -146,7 +146,7 @@ function HorizScroll({ title, items, showPrice, showRating }: {
       </div>
       <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2" style={{ scrollbarWidth: 'none' }}>
         {items.map((item) => (
-          <Link key={item.id} href={`/services?category=${item.categorySlug}`} className="w-36 shrink-0 snap-start">
+          <Link key={item.id} href="/services" className="w-36 shrink-0 snap-start">
             <div className="h-24 w-full rounded-xl bg-hairline/40" />
             <div className="mt-2">
               <span className="text-[12px] font-bold text-ink">{item.title}</span>
@@ -242,13 +242,13 @@ function CategorizedLists({ trending }: { trending: HomepageService[] }) {
         <div key={catTitle}>
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-[16px] font-extrabold text-ink">{catTitle}</h3>
-            <a href={`/services?category=${items[0]?.categorySlug ?? ''}`} className="flex items-center gap-0.5 text-[12px] font-semibold text-accent">
+            <a href="/services" className="flex items-center gap-0.5 text-[12px] font-semibold text-accent">
               See all <ArrowRight className="h-3.5 w-3.5" />
             </a>
           </div>
           <div className="space-y-3">
             {items.map((item) => (
-              <Link key={item.id} href={`/services?category=${item.categorySlug}`} className="flex items-center gap-3">
+              <Link key={item.id} href="/services" className="flex items-center gap-3">
                 <div className="h-16 w-16 shrink-0 rounded-xl bg-hairline/40" />
                 <div>
                   <span className="text-[13px] font-bold text-ink">{item.title}</span>

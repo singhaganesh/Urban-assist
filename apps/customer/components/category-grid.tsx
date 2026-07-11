@@ -36,7 +36,7 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
             return (
               <a
                 key={cat.id}
-                href={`/services?category=${cat.slug}`}
+                href={`/services/${cat.slug}`}
                 className="group card-shadow card overflow-hidden rounded-xl transition hover:border-accent"
                 style={{ borderColor: '#ECE6D9' }}
               >

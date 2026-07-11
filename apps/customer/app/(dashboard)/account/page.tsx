@@ -249,7 +249,7 @@ export default function AccountPage() {
                   <span className="font-medium text-xs sm:text-sm">{f.provider?.full_name}</span>
                   <span className="text-xs text-muted block mt-0.5">★ {Number(f.provider?.rating_avg ?? 0).toFixed(1)}</span>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => window.location.href = `/services?q=${encodeURIComponent(f.provider?.full_name ?? '')}`}>
+                <Button size="sm" variant="outline" onClick={() => window.location.href = `/browse?q=${encodeURIComponent(f.provider?.full_name ?? '')}`}>
                   Book
                 </Button>
               </li>

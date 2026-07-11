@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { getSupabaseServer } from '@urban-assist/db/server';
 
 const nav: NavItem[] = [
-  { href: '/services', label: 'Home', icon: <Home className="h-4 w-4" /> },
+  { href: '/browse', label: 'Home', icon: <Home className="h-4 w-4" /> },
   { href: '/bookings', label: 'Bookings', icon: <CalendarClock className="h-4 w-4" /> },
   { href: '/messages', label: 'Messages', icon: <MessageCircle className="h-4 w-4" /> },
   { href: '/account', label: 'Account', icon: <UserRound className="h-4 w-4" /> },

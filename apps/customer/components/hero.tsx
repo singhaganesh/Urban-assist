@@ -1,4 +1,3 @@
-import { MapPin } from 'lucide-react';
 import type { HomepageCategory, HomepageData } from '../lib/homepage-data';
 import { getCategoryIcon } from '../lib/homepage-data';
 import { pence } from '@urban-assist/lib';
@@ -48,7 +47,7 @@ export function Hero({ categories, promoCode }: HeroProps) {
                   return (
                     <a
                       key={cat.id}
-                      href={`/services?category=${cat.slug}`}
+                      href={`/services/${cat.slug}`}
                       className="group flex flex-col items-center gap-2 rounded-xl border border-input-border bg-white p-4 text-center transition hover:border-accent"
                     >
                       <span

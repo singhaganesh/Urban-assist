@@ -204,7 +204,7 @@ export function ServicesEditor({
 
               return (
                 <li key={m.id}>
-                  <Card className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <Card className="p-4 sm:p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     {isEditing ? (
                       <div className="flex-1 space-y-2">
                         <div className="grid grid-cols-2 gap-2">

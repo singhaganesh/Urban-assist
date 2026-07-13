@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { getSupabaseServer } from '@urban-assist/db/server';
 import { Card, Badge, EmptyState, Button } from '@urban-assist/ui';
 import { pence, ukDateTime } from '@urban-assist/lib';
@@ -35,10 +36,13 @@ export default async function BookingsList({ searchParams }: { searchParams: { t
   const tab: Tab = Object.hasOwn(TABS, searchParams.tab ?? '') ? (searchParams.tab as Tab) : 'active';
   const db = getSupabaseServer();
   const { data: { user } } = await db.auth.getUser();
+  if (!user) {
+    redirect('/login');
+  }
   const { data: bookings } = await db
     .from('bookings')
     .select('id, short_code, scheduled_at, status, total_pence, provider_service_id, category:service_categories(name), provider:profiles!bookings_provider_id_fkey(full_name)')
-    .eq('customer_id', user!.id)
+    .eq('customer_id', user.id)
     .in('status', [...TABS[tab]])
     .order('scheduled_at', { ascending: false });
 
@@ -48,7 +52,7 @@ export default async function BookingsList({ searchParams }: { searchParams: { t
     const { data: reviews } = await db
       .from('reviews')
       .select('booking_id')
-      .eq('author_id', user!.id)
+      .eq('author_id', user.id)
       .in('booking_id', bookings.map((b: any) => b.id));
     reviewedIds = new Set((reviews ?? []).map((r: any) => r.booking_id));
   }

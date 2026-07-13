@@ -7,6 +7,7 @@ import { getCategoryBySlug, getCategoryIcon, type ServiceItem, type Subcategory 
 import { Header } from '../../../../components/header';
 import { Footer } from '../../../../components/footer';
 import { ServiceCard } from '../../../../components/services/service-card';
+import { ProviderList } from '../../../../components/services/provider-list';
 
 export const dynamic = 'force-dynamic';
 
@@ -112,36 +113,7 @@ export default async function ServiceDetailPage({ params }: { params: { category
                   </Link>
                 </div>
               ) : (
-                <ul className="mt-3 space-y-3">
-                  {providers.map((p: any) => (
-                    <li key={p.id}>
-                      <Link href={`/book/${p.id}`} className="card card-shadow flex items-center gap-4 rounded-xl border border-hairline bg-white p-4 transition hover:border-accent">
-                        <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-hairline">
-                          {p.provider?.avatar_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={p.provider.avatar_url} alt="" className="h-full w-full object-cover" />
-                          ) : null}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-[14px] font-bold text-ink">{p.title}</div>
-                          <div className="mt-0.5 flex items-center gap-2 text-[12px] text-muted">
-                            <span>{p.provider?.full_name}</span>
-                            <span className="flex items-center gap-0.5">
-                              <Star className="h-3 w-3 fill-amber text-amber" />
-                              {Number(p.provider?.rating_avg ?? 0).toFixed(1)}
-                              {p.provider?.rating_count ? ` (${p.provider.rating_count})` : ''}
-                            </span>
-                            <span>· {p.duration_mins} min</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-[11px] text-muted">From</div>
-                          <div className="text-[16px] font-extrabold text-ink">{pence(p.price_pence)}</div>
-                        </div>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                <ProviderList providers={providers as any} />
               )}
             </section>
 

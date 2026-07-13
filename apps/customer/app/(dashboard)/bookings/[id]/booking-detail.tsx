@@ -19,6 +19,9 @@ export function BookingDetail({ booking: initialBooking, payment: initialPayment
   const [reviewComment, setReviewComment] = React.useState('');
   const [reviewed, setReviewed] = React.useState(hasReview);
   const [busy, setBusy] = React.useState(false);
+  const [dismissedReview, setDismissedReview] = React.useState(false);
+  const [selectedTip, setSelectedTip] = React.useState<string | null>(null);
+  const [customTip, setCustomTip] = React.useState<string>('');
 
   // Realtime subscriptions.
   React.useEffect(() => {
@@ -280,14 +283,165 @@ export function BookingDetail({ booking: initialBooking, payment: initialPayment
         </form>
       </Card>
 
-      {booking.status === 'completed' && !reviewed && (
-        <Card className="space-y-2">
-          <div className="text-xs font-mono-utility text-muted">Rate your provider</div>
+      {/* Mobile full-screen review flow */}
+      {booking.status === 'completed' && !reviewed && !dismissedReview && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-bg px-4 py-6 overflow-y-auto pb-24 lg:hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-hairline pb-4">
+            <button
+              onClick={() => setDismissedReview(true)}
+              className="text-sm font-semibold text-muted hover:text-ink"
+            >
+              ✕ Close
+            </button>
+            <h2 className="font-display text-lg font-bold text-ink">Rate Provider</h2>
+            <div className="w-12" />
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 space-y-6 py-6">
+            <div className="text-center space-y-2">
+              <h3 className="font-display text-base font-bold text-ink">
+                How was your service with {booking.provider?.full_name ?? 'your provider'}?
+              </h3>
+              <div className="flex justify-center py-2">
+                <RatingInput value={rating} onChange={setRating} />
+              </div>
+            </div>
+
+            <Field label="Leave a comment (optional)">
+              <Textarea
+                rows={3}
+                placeholder="Share your experience..."
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+              />
+            </Field>
+
+            {/* Tip Section */}
+            <div className="space-y-3">
+              <label className="text-xs font-medium text-muted">Tip Provider</label>
+              <div className="grid grid-cols-4 gap-2">
+                {['£2', '£5', '£10'].map((tip) => (
+                  <button
+                    key={tip}
+                    type="button"
+                    onClick={() => {
+                      setSelectedTip(tip);
+                      setCustomTip('');
+                    }}
+                    className={`tap rounded-xl border py-2 text-center text-sm font-medium transition ${
+                      selectedTip === tip
+                        ? 'border-ink bg-ink text-bg'
+                        : 'border-hairline bg-white text-ink hover:bg-bg'
+                    }`}
+                  >
+                    {tip}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setSelectedTip('other')}
+                  className={`tap rounded-xl border py-2 text-center text-sm font-medium transition ${
+                    selectedTip === 'other'
+                      ? 'border-ink bg-ink text-bg'
+                      : 'border-hairline bg-white text-ink hover:bg-bg'
+                  }`}
+                >
+                  Other
+                </button>
+              </div>
+
+              {selectedTip === 'other' && (
+                <Field label="Custom Tip Amount (£)">
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="Enter amount"
+                    value={customTip}
+                    onChange={(e) => setCustomTip(e.target.value)}
+                    className="tap w-full rounded-xl border border-hairline bg-white px-3.5 py-2 text-sm focus:border-ink focus:outline-none"
+                  />
+                </Field>
+              )}
+            </div>
+          </div>
+
+          {/* Sticky Bottom Submit Review CTA */}
+          <div className="fixed inset-x-0 bottom-0 z-50 border-t border-hairline bg-white/95 px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))] backdrop-blur">
+            <Button
+              onClick={submitReview}
+              disabled={rating === 0}
+              size="block"
+            >
+              SUBMIT REVIEW
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop review card */}
+      {booking.status === 'completed' && !reviewed && !dismissedReview && (
+        <Card className="hidden lg:block space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="text-xs font-mono-utility text-muted">Rate your provider</div>
+            <button
+              onClick={() => setDismissedReview(true)}
+              className="text-xs font-semibold text-muted hover:text-ink"
+            >
+              ✕ Close
+            </button>
+          </div>
+          <div className="font-display font-bold">
+            How was your service with {booking.provider?.full_name ?? 'your provider'}?
+          </div>
           <RatingInput value={rating} onChange={setRating} />
           <Field label="Comment (optional)">
             <Textarea rows={3} value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} />
           </Field>
-          <Button onClick={submitReview} disabled={rating === 0}>Submit review</Button>
+          
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted">Tip Provider</label>
+            <div className="flex gap-2">
+              {['£2', '£5', '£10'].map((tip) => (
+                <button
+                  key={tip}
+                  type="button"
+                  onClick={() => {
+                    setSelectedTip(tip);
+                    setCustomTip('');
+                  }}
+                  className={`tap rounded-xl border px-3 py-1.5 text-sm font-medium transition ${
+                    selectedTip === tip ? 'border-ink bg-ink text-white' : 'border-hairline bg-white text-ink'
+                  }`}
+                >
+                  {tip}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setSelectedTip('other')}
+                className={`tap rounded-xl border px-3 py-1.5 text-sm font-medium transition ${
+                  selectedTip === 'other' ? 'border-ink bg-ink text-white' : 'border-hairline bg-white text-ink'
+                }`}
+              >
+                Other
+              </button>
+            </div>
+            {selectedTip === 'other' && (
+              <input
+                type="number"
+                placeholder="Amount (£)"
+                value={customTip}
+                onChange={(e) => setCustomTip(e.target.value)}
+                className="tap rounded-xl border border-hairline px-3 py-1.5 text-sm mt-2 focus:border-ink focus:outline-none"
+              />
+            )}
+          </div>
+
+          <Button onClick={submitReview} disabled={rating === 0} className="w-full">
+            Submit review
+          </Button>
         </Card>
       )}
       {reviewed && !hasReview && (

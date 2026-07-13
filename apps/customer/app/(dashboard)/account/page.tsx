@@ -3,7 +3,22 @@ import * as React from 'react';
 import { Card, Button, Badge, Field, Input } from '@urban-assist/ui';
 import { getSupabaseBrowser as supabase } from '@urban-assist/db/browser';
 import { formatUkPhone } from '@urban-assist/lib';
-import { User, Gift, MapPin, Heart, Shield, HelpCircle, Plus, X } from 'lucide-react';
+import {
+  User,
+  Gift,
+  MapPin,
+  Heart,
+  Shield,
+  HelpCircle,
+  Plus,
+  X,
+  CreditCard,
+  Tag,
+  ChevronRight,
+  LogOut,
+  ArrowLeft,
+  Bell
+} from 'lucide-react';
 import { AddressForm } from '../../../components/address-form';
 
 interface Address {
@@ -22,6 +37,28 @@ interface Favorite {
   };
 }
 
+const MOCK_PROMOS = [
+  { code: 'URBANNEW5', desc: '£5.00 off your first service', expires: '31 Dec 2026' },
+  { code: 'CLEAN20', desc: '20% off deep cleaning packages', expires: '31 Aug 2026' },
+];
+
+const MOCK_CARDS = [
+  { brand: 'Visa', last4: '4242', exp: '12/28', default: true },
+];
+
+const GiftIllustration = () => (
+  <div className="relative mx-auto flex h-28 w-28 items-center justify-center rounded-2xl bg-accent/10 border border-accent/20">
+    <div className="relative h-14 w-14 bg-accent rounded-lg shadow-lg flex items-center justify-center animate-bounce" style={{ animationDuration: '3s' }}>
+      {/* Ribbon */}
+      <div className="absolute inset-y-0 w-3.5 bg-white" />
+      <div className="absolute inset-x-0 h-3.5 bg-white" />
+      {/* Bow */}
+      <div className="absolute -top-2.5 left-2 h-4 w-5 border-4 border-white rounded-full bg-accent" />
+      <div className="absolute -top-2.5 right-2 h-4 w-5 border-4 border-white rounded-full bg-accent" />
+    </div>
+  </div>
+);
+
 export default function AccountPage() {
   const [loading, setLoading] = React.useState(true);
   const [user, setUser] = React.useState<any>(null);
@@ -30,6 +67,10 @@ export default function AccountPage() {
   const [addingAddress, setAddingAddress] = React.useState(false);
   const [favorites, setFavorites] = React.useState<Favorite[]>([]);
   const [referralCode, setReferralCode] = React.useState<string | null>(null);
+
+  // Tab selections
+  const [activeTab, setActiveTab] = React.useState<string>('profile');
+  const [activeMobileView, setActiveMobileView] = React.useState<string | null>(null);
 
   // Profile Form States
   const [fullName, setFullName] = React.useState('');
@@ -148,186 +189,438 @@ export default function AccountPage() {
     );
   }
 
-  return (
-    <div className="space-y-4 py-2">
-      <h1 className="font-display text-xl">Account</h1>
-
-      {/* Edit Profile Form */}
-      <Card>
-        <form onSubmit={handleProfileUpdate} className="space-y-3">
-          <h3 className="font-display text-sm font-semibold flex items-center gap-1">
-            <User className="h-4 w-4 text-muted" /> Profile settings
-          </h3>
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="Full name">
-              <Input
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-              />
-            </Field>
-            <Field label="Phone number">
-              <Input
-                type="tel"
-                placeholder="e.g. +44 7123 456789"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
-            </Field>
-          </div>
-          <Field label="Email Address">
-            <Input disabled value={user?.email} />
+  const renderProfileSettings = () => (
+    <Card className="border border-hairline bg-white p-5 rounded-xl shadow-card">
+      <form onSubmit={handleProfileUpdate} className="space-y-4">
+        <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
+          <User className="h-5 w-5 text-muted" /> Profile Settings
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field label="Full name">
+            <Input required value={fullName} onChange={(e) => setFullName(e.target.value)} />
           </Field>
-          {profileError && <p className="text-xs text-danger">{profileError}</p>}
-          {profileOk && <p className="text-xs text-success">{profileOk}</p>}
-          <Button type="submit" disabled={profileBusy}>
-            {profileBusy ? 'Saving…' : 'Save profile'}
-          </Button>
-        </form>
-      </Card>
-
-      {/* Referrals Code display */}
-      <Card className="bg-accent/5 border-accent/20 flex flex-col justify-between p-5 gap-3">
-        <div className="flex items-start gap-3">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/25 text-[color:rgb(var(--accent))] shrink-0">
-            <Gift className="h-5 w-5" />
-          </span>
-          <div>
-            <div className="font-medium">Share the love, get £5</div>
-            <p className="text-xs text-muted mt-0.5">
-              Give friends £5 off their first booking. You'll get £5 in credit when they complete their service.
-            </p>
-          </div>
+          <Field label="Phone number">
+            <Input
+              type="tel"
+              placeholder="e.g. +44 7123 456789"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </Field>
         </div>
-        {referralCode && (
-          <div className="flex items-center justify-between gap-3 bg-white border border-hairline p-3 rounded-xl">
-            <span className="font-mono-utility text-sm font-bold text-ink select-all">{referralCode}</span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                navigator.clipboard.writeText(referralCode);
-                alert('Referral code copied to clipboard!');
-              }}
+        <Field label="Email Address">
+          <Input disabled value={user?.email} />
+        </Field>
+        {profileError && <p className="text-xs text-danger font-medium">{profileError}</p>}
+        {profileOk && <p className="text-xs text-success font-medium">{profileOk}</p>}
+        <Button type="submit" disabled={profileBusy}>
+          {profileBusy ? 'Saving…' : 'Save profile'}
+        </Button>
+      </form>
+    </Card>
+  );
+
+  const renderAddresses = () => (
+    <Card className="space-y-4 border border-hairline bg-white p-5 rounded-xl shadow-card">
+      <div className="flex items-center justify-between border-b border-hairline pb-2">
+        <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
+          <MapPin className="h-5 w-5 text-muted" /> Saved Addresses
+        </h3>
+        <Badge tone="muted">{addresses.length}</Badge>
+      </div>
+      {addresses.length ? (
+        <ul className="divide-y divide-hairline text-sm">
+          {addresses.map((a) => (
+            <li key={a.id} className="flex items-center justify-between gap-3 py-3">
+              <div>
+                <span className="font-bold text-ink block">{a.label}</span>
+                <span className="text-xs text-muted">
+                  {[a.line1, a.city, a.postcode].filter(Boolean).join(', ')}
+                </span>
+              </div>
+              <button
+                aria-label={`Delete ${a.label}`}
+                className="shrink-0 rounded-full p-1.5 text-muted hover:bg-danger/10 hover:text-danger transition"
+                onClick={async () => {
+                  if (!window.confirm(`Delete "${a.label}"?`)) return;
+                  const { error } = await supabase().from('addresses').delete().eq('id', a.id);
+                  if (!error) setAddresses((cur) => cur.filter((x) => x.id !== a.id));
+                  else alert('Could not delete — it may be linked to a booking.');
+                }}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-xs text-muted">No saved addresses yet.</p>
+      )}
+      {addingAddress ? (
+        <AddressForm
+          onAdded={async () => {
+            setAddingAddress(false);
+            const { data: { user: u } } = await supabase().auth.getUser();
+            if (!u) return;
+            const { data: addr } = await supabase().from('addresses').select('*').eq('profile_id', u.id);
+            setAddresses(addr ?? []);
+          }}
+          onCancel={() => setAddingAddress(false)}
+        />
+      ) : (
+        <Button variant="outline" onClick={() => setAddingAddress(true)} className="flex items-center gap-1.5">
+          <Plus className="h-4 w-4" /> Add Address
+        </Button>
+      )}
+    </Card>
+  );
+
+  const renderPayments = () => (
+    <Card className="space-y-4 border border-hairline bg-white p-5 rounded-xl shadow-card">
+      <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
+        <CreditCard className="h-5 w-5 text-muted" /> Payment Methods
+      </h3>
+      <ul className="space-y-2.5">
+        {MOCK_CARDS.map((card) => (
+          <li
+            key={card.last4}
+            className="flex items-center justify-between border border-hairline p-4 rounded-xl bg-bg/20"
+          >
+            <div className="flex items-center gap-3">
+              <span className="font-extrabold text-sm text-ink">{card.brand}</span>
+              <span className="text-xs font-mono-utility text-muted">•••• {card.last4}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted font-medium">Expires {card.exp}</span>
+              {card.default && <Badge tone="accent">Default</Badge>}
+            </div>
+          </li>
+        ))}
+      </ul>
+      <Button variant="outline" className="w-full" disabled>
+        Add payment method
+      </Button>
+    </Card>
+  );
+
+  const renderFavorites = () => (
+    <Card className="space-y-4 border border-hairline bg-white p-5 rounded-xl shadow-card">
+      <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
+        <Heart className="h-5 w-5 text-danger fill-danger/10" /> Saved Providers
+      </h3>
+      {favorites.length ? (
+        <ul className="space-y-2">
+          {favorites.map((f) => (
+            <li
+              key={f.provider_id}
+              className="flex justify-between items-center bg-bg/10 p-3.5 rounded-xl border border-hairline"
             >
-              Copy Code
+              <div>
+                <span className="font-bold text-sm text-ink block">{f.provider?.full_name}</span>
+                <span className="text-xs text-muted block mt-0.5">
+                  ★ {Number(f.provider?.rating_avg ?? 0).toFixed(1)}
+                </span>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  (window.location.href = `/browse?q=${encodeURIComponent(f.provider?.full_name ?? '')}`)
+                }
+              >
+                Book
+              </Button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-xs text-muted">No saved providers. Heart a provider to pin them here.</p>
+      )}
+    </Card>
+  );
+
+  const renderCoupons = () => (
+    <Card className="space-y-4 border border-hairline bg-white p-5 rounded-xl shadow-card">
+      <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
+        <Tag className="h-5 w-5 text-muted" /> Promos & Coupons
+      </h3>
+      <ul className="space-y-3">
+        {MOCK_PROMOS.map((promo) => (
+          <li key={promo.code} className="border border-dashed border-accent/40 bg-accent/5 p-4 rounded-xl">
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-mono-utility text-sm font-bold text-accent">{promo.code}</span>
+              <span className="text-[10px] text-muted font-mono-utility">Expires {promo.expires}</span>
+            </div>
+            <p className="text-xs text-ink font-medium mt-1.5">{promo.desc}</p>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+
+  const renderReferrals = () => (
+    <Card className="space-y-4 border border-hairline bg-white p-5 rounded-xl shadow-card text-center">
+      <h3 className="font-display text-base font-bold text-ink flex items-center justify-center gap-2 mb-2">
+        <Gift className="h-5 w-5 text-accent animate-spin" style={{ animationDuration: '6s' }} /> Refer a Friend
+      </h3>
+      <GiftIllustration />
+      <div className="space-y-2 mt-4 max-w-sm mx-auto">
+        <h4 className="font-display text-xl font-bold text-ink">Give £10, Get £10!</h4>
+        <p className="text-xs text-muted leading-relaxed">
+          Share your code with friends. When they book their first service, you both earn!
+        </p>
+      </div>
+      {referralCode && (
+        <div className="flex items-center justify-between gap-3 bg-bg/25 border border-hairline p-3.5 rounded-xl max-w-sm mx-auto mt-4">
+          <span className="font-mono-utility text-sm font-bold text-ink select-all">{referralCode}</span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              navigator.clipboard.writeText(referralCode);
+              alert('Referral code copied!');
+            }}
+          >
+            Copy Code
+          </Button>
+        </div>
+      )}
+      <div className="flex gap-2 justify-center max-w-sm mx-auto mt-4">
+        <Button className="w-full py-2.5 text-xs">Share via WhatsApp</Button>
+        <Button variant="outline" className="w-full py-2.5 text-xs">
+          Share via Email
+        </Button>
+      </div>
+    </Card>
+  );
+
+  const renderGdpr = () => (
+    <Card className="space-y-4 border border-hairline bg-white p-5 rounded-xl shadow-card">
+      <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
+        <Shield className="h-5 w-5 text-muted" /> GDPR Data Controls
+      </h3>
+      <p className="text-xs text-muted leading-relaxed">
+        Under UK GDPR legislation, you can request an export of all your transaction and chat histories, or request
+        permanent account erasure.
+      </p>
+      <div className="flex gap-3">
+        <Button variant="outline" size="sm" onClick={triggerGdprExport}>
+          Export My Data
+        </Button>
+        <Button variant="ghost" size="sm" className="text-danger" onClick={triggerGdprDeletion}>
+          Delete Account
+        </Button>
+      </div>
+      {gdprProgress && <p className="text-xs text-accent font-semibold mt-2">{gdprProgress}</p>}
+    </Card>
+  );
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'profile':
+        return renderProfileSettings();
+      case 'addresses':
+        return renderAddresses();
+      case 'payments':
+        return renderPayments();
+      case 'favorites':
+        return renderFavorites();
+      case 'coupons':
+        return renderCoupons();
+      case 'referrals':
+        return renderReferrals();
+      case 'gdpr':
+        return renderGdpr();
+      default:
+        return renderProfileSettings();
+    }
+  };
+
+  return (
+    <div className="space-y-5 py-2">
+      {/* Title */}
+      <h1 className="font-display text-xl font-bold text-ink">Account Settings</h1>
+
+      {/* DESKTOP SPLIT-PANE VIEW */}
+      <div className="hidden lg:grid grid-cols-[280px,1fr] gap-6 items-start">
+        {/* Sidebar Nav */}
+        <aside className="border border-hairline bg-white rounded-xl shadow-card overflow-hidden">
+          {/* User profile summary */}
+          <div className="p-5 border-b border-hairline bg-bg/20 flex items-center gap-4">
+            <div className="h-12 w-12 rounded-full bg-accent text-white flex items-center justify-center font-display text-base font-bold">
+              {profile?.full_name ? profile.full_name[0].toUpperCase() : 'U'}
+            </div>
+            <div className="min-w-0">
+              <div className="truncate font-display font-bold text-ink">
+                {profile?.full_name ?? 'User'}
+              </div>
+              <div className="text-[11px] text-muted mt-0.5">
+                {profile?.phone ?? 'No phone added'}
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation Links */}
+          <nav className="p-3 space-y-1">
+            {[
+              { id: 'profile', label: 'Profile Settings', icon: <User className="h-4 w-4" /> },
+              { id: 'addresses', label: 'Manage Addresses', icon: <MapPin className="h-4 w-4" /> },
+              { id: 'payments', label: 'Payment Methods', icon: <CreditCard className="h-4 w-4" /> },
+              { id: 'favorites', label: 'Wishlist & Favorites', icon: <Heart className="h-4 w-4" /> },
+              { id: 'coupons', label: 'Promos & Coupons', icon: <Tag className="h-4 w-4" /> },
+              { id: 'referrals', label: 'Refer a Friend', icon: <Gift className="h-4 w-4" /> },
+              { id: 'gdpr', label: 'GDPR Privacy', icon: <Shield className="h-4 w-4" /> },
+            ].map((link) => (
+              <button
+                key={link.id}
+                onClick={() => setActiveTab(link.id)}
+                className={`tap w-full flex items-center gap-3 px-3 py-2 text-sm rounded-xl font-medium transition ${
+                  activeTab === link.id
+                    ? 'bg-accent/10 text-accent font-bold'
+                    : 'text-ink hover:bg-bg/40'
+                }`}
+              >
+                {link.icon} {link.label}
+              </button>
+            ))}
+
+            <hr className="border-hairline my-2" />
+
+            <button
+              onClick={handleLogout}
+              className="tap w-full flex items-center gap-3 px-3 py-2 text-sm text-danger font-medium rounded-xl hover:bg-danger/10 transition"
+            >
+              <LogOut className="h-4 w-4" /> Log Out
+            </button>
+          </nav>
+        </aside>
+
+        {/* Dynamic Detail Content Panel */}
+        <div>{renderContent()}</div>
+      </div>
+
+      {/* MOBILE STACKED LIST MENU VIEW */}
+      <div className="lg:hidden space-y-4">
+        {activeMobileView ? (
+          /* Mobile Sub-view Overlay */
+          <div className="space-y-4">
+            <button
+              onClick={() => setActiveMobileView(null)}
+              className="tap flex items-center gap-1.5 text-sm font-bold text-muted hover:text-ink pb-2"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to Account
+            </button>
+            {activeMobileView === 'profile' && renderProfileSettings()}
+            {activeMobileView === 'addresses' && renderAddresses()}
+            {activeMobileView === 'payments' && renderPayments()}
+            {activeMobileView === 'favorites' && renderFavorites()}
+            {activeMobileView === 'coupons' && renderCoupons()}
+            {activeMobileView === 'referrals' && renderReferrals()}
+            {activeMobileView === 'gdpr' && renderGdpr()}
+          </div>
+        ) : (
+          /* Main Mobile Profile Menu Options List */
+          <div className="space-y-6">
+            {/* Header User Card */}
+            <div className="flex items-center justify-between border border-hairline p-4 rounded-xl bg-white shadow-card">
+              <div className="flex items-center gap-3">
+                <div className="h-11 w-11 rounded-full bg-accent text-white flex items-center justify-center font-display text-sm font-bold">
+                  {profile?.full_name ? profile.full_name[0].toUpperCase() : 'U'}
+                </div>
+                <div>
+                  <div className="font-display text-base font-bold text-ink">
+                    {profile?.full_name ?? 'User'}
+                  </div>
+                  <div className="text-xs text-muted mt-0.5">{profile?.phone}</div>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveMobileView('profile')}
+                className="text-xs font-bold text-accent hover:text-accent-hover"
+              >
+                Edit
+              </button>
+            </div>
+
+            {/* Menu Group: Account */}
+            <div className="space-y-2">
+              <div className="text-[10px] font-bold text-muted uppercase tracking-wider pl-1">
+                Account
+              </div>
+              <Card className="divide-y divide-hairline p-0 bg-white border border-hairline rounded-xl shadow-card overflow-hidden">
+                {[
+                  { id: 'addresses', label: 'Manage Addresses', icon: <MapPin className="h-4 w-4" /> },
+                  { id: 'payments', label: 'Payment Methods', icon: <CreditCard className="h-4 w-4" /> },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveMobileView(item.id)}
+                    className="tap w-full flex items-center justify-between px-4 py-3.5 text-sm text-ink transition hover:bg-bg/20"
+                  >
+                    <span className="flex items-center gap-3">
+                      {item.icon} {item.label}
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-muted" />
+                  </button>
+                ))}
+              </Card>
+            </div>
+
+            {/* Menu Group: Offers & Savings */}
+            <div className="space-y-2">
+              <div className="text-[10px] font-bold text-muted uppercase tracking-wider pl-1">
+                Offers & Savings
+              </div>
+              <Card className="divide-y divide-hairline p-0 bg-white border border-hairline rounded-xl shadow-card overflow-hidden">
+                {[
+                  { id: 'coupons', label: 'Promos & Coupons', icon: <Tag className="h-4 w-4" /> },
+                  { id: 'referrals', label: 'Refer a Friend', icon: <Gift className="h-4 w-4" /> },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveMobileView(item.id)}
+                    className="tap w-full flex items-center justify-between px-4 py-3.5 text-sm text-ink transition hover:bg-bg/20"
+                  >
+                    <span className="flex items-center gap-3">
+                      {item.icon} {item.label}
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-muted" />
+                  </button>
+                ))}
+              </Card>
+            </div>
+
+            {/* Menu Group: Saved */}
+            <div className="space-y-2">
+              <div className="text-[10px] font-bold text-muted uppercase tracking-wider pl-1">
+                Saved
+              </div>
+              <Card className="divide-y divide-hairline p-0 bg-white border border-hairline rounded-xl shadow-card overflow-hidden">
+                {[
+                  { id: 'favorites', label: 'Wishlist & Favorites', icon: <Heart className="h-4 w-4" /> },
+                  { id: 'gdpr', label: 'GDPR Data Controls', icon: <Shield className="h-4 w-4" /> },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveMobileView(item.id)}
+                    className="tap w-full flex items-center justify-between px-4 py-3.5 text-sm text-ink transition hover:bg-bg/20"
+                  >
+                    <span className="flex items-center gap-3">
+                      {item.icon} {item.label}
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-muted" />
+                  </button>
+                ))}
+              </Card>
+            </div>
+
+            {/* Log Out */}
+            <Button variant="outline" size="block" onClick={handleLogout} className="mt-4">
+              Log Out
             </Button>
           </div>
         )}
-      </Card>
-
-      {/* Saved Addresses list */}
-      <Card className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h3 className="font-display text-sm font-semibold flex items-center gap-1.5">
-            <MapPin className="h-4 w-4 text-muted" /> Saved addresses
-          </h3>
-          <Badge tone="muted">{addresses.length}</Badge>
-        </div>
-        {addresses.length ? (
-          <ul className="space-y-2 text-sm">
-            {addresses.map((a) => (
-              <li key={a.id} className="flex items-center justify-between gap-2 text-xs sm:text-sm">
-                <div>
-                  <span className="font-medium">{a.label}</span>
-                  <span className="text-muted"> — {[a.line1, a.city, a.postcode].filter(Boolean).join(', ')}</span>
-                </div>
-                <button
-                  aria-label={`Delete ${a.label}`}
-                  className="shrink-0 rounded-full p-1 text-muted hover:bg-danger/10 hover:text-danger"
-                  onClick={async () => {
-                    if (!window.confirm(`Delete "${a.label}"?`)) return;
-                    const { error } = await supabase().from('addresses').delete().eq('id', a.id);
-                    if (!error) setAddresses((cur) => cur.filter((x) => x.id !== a.id));
-                    else alert('Could not delete — it may be linked to a booking.');
-                  }}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-xs text-muted">No saved addresses yet.</p>
-        )}
-        {addingAddress ? (
-          <AddressForm
-            onAdded={async () => {
-              setAddingAddress(false);
-              const { data: { user: u } } = await supabase().auth.getUser();
-              if (!u) return;
-              const { data: addr } = await supabase().from('addresses').select('*').eq('profile_id', u.id);
-              setAddresses(addr ?? []);
-            }}
-            onCancel={() => setAddingAddress(false)}
-          />
-        ) : (
-          <Button size="sm" variant="outline" onClick={() => setAddingAddress(true)}>
-            <Plus className="mr-1 h-3.5 w-3.5" /> Add address
-          </Button>
-        )}
-      </Card>
-
-      {/* Favourites / Saved Providers */}
-      <Card className="space-y-2">
-        <h3 className="font-display text-sm font-semibold flex items-center gap-1.5">
-          <Heart className="h-4 w-4 text-muted text-danger" /> Saved Providers
-        </h3>
-        {favorites.length ? (
-          <ul className="space-y-2 text-sm">
-            {favorites.map((f) => (
-              <li key={f.provider_id} className="flex justify-between items-center bg-bg/30 p-2.5 rounded-xl border border-hairline">
-                <div>
-                  <span className="font-medium text-xs sm:text-sm">{f.provider?.full_name}</span>
-                  <span className="text-xs text-muted block mt-0.5">★ {Number(f.provider?.rating_avg ?? 0).toFixed(1)}</span>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => window.location.href = `/browse?q=${encodeURIComponent(f.provider?.full_name ?? '')}`}>
-                  Book
-                </Button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-xs text-muted">No saved providers. Heart a provider to pin them here.</p>
-        )}
-      </Card>
-
-      {/* GDPR privacy & request stubs */}
-      <Card className="space-y-2">
-        <h3 className="font-display text-sm font-semibold flex items-center gap-1.5">
-          <Shield className="h-4 w-4 text-muted" /> GDPR Data Controls
-        </h3>
-        <p className="text-xs text-muted">
-          Under UK GDPR legislation, you can request an export of all your transaction and chat histories, or request permanent account erasure.
-        </p>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="text-xs" onClick={triggerGdprExport}>
-            Export My Data
-          </Button>
-          <Button variant="ghost" size="sm" className="text-xs text-danger" onClick={triggerGdprDeletion}>
-            Delete Account
-          </Button>
-        </div>
-        {gdprProgress && <p className="text-xs text-accent mt-2">{gdprProgress}</p>}
-      </Card>
-
-      {/* FAQ/Terms list */}
-      <Card className="space-y-2">
-        <h3 className="font-display text-sm font-semibold flex items-center gap-1.5">
-          <HelpCircle className="h-4 w-4 text-muted" /> Help & Support
-        </h3>
-        <ul className="space-y-1 text-xs sm:text-sm">
-          <li><a className="underline text-muted hover:text-ink" href="/help">Frequently Asked Questions</a></li>
-          <li><a className="underline text-muted hover:text-ink" href="/terms">Terms of Service</a></li>
-          <li><a className="underline text-muted hover:text-ink" href="/privacy">Privacy Policy</a></li>
-        </ul>
-      </Card>
-
-      {/* Logout button */}
-      <Button variant="outline" size="block" onClick={handleLogout} className="mt-4">
-        Logout
-      </Button>
+      </div>
     </div>
   );
 }
-

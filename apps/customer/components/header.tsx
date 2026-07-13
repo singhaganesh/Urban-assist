@@ -1,14 +1,15 @@
 import Link from 'next/link';
 import { MapPin, ShoppingCart, User, ChevronDown } from 'lucide-react';
 import { ServiceSearch } from './services/service-search';
+import { Logo } from '@urban-assist/ui';
 
 export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-hairline bg-white">
       <div className="mx-auto flex max-w-page items-center gap-4 px-6 py-3">
-        {/* Logo placeholder */}
+        {/* Logo */}
         <Link href="/" className="flex shrink-0 items-center gap-2.5">
-          <span className="block h-9 w-9 rounded-[9px] bg-hairline" />
+          <Logo />
           <span className="hidden text-[15px] font-extrabold text-ink sm:inline">
             Urban Assist
           </span>
@@ -40,18 +41,20 @@ export function Header() {
         </nav>
 
         {/* Icon buttons */}
-        <button
+        <Link
+          href="/cart"
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-input-border bg-white"
           aria-label="Cart"
         >
           <ShoppingCart className="h-4 w-4 text-ink" />
-        </button>
-        <button
+        </Link>
+        <Link
+          href="/account"
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-input-border bg-white"
           aria-label="Account"
         >
           <User className="h-4 w-4 text-ink" />
-        </button>
+        </Link>
       </div>
     </header>
   );

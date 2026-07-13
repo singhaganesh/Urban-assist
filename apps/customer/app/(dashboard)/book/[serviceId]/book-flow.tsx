@@ -94,7 +94,7 @@ export function BookFlow({ service, addresses }: { service: Service; addresses: 
         throw new Error(payErr.message ?? 'Payment failed');
       }
       if (paymentIntent?.status === 'succeeded') {
-        router.replace(`/bookings/${createdBookingId}`);
+        router.replace(`/book/success?id=${createdBookingId}`);
       } else {
         throw new Error('Payment was not completed successfully.');
       }
@@ -135,7 +135,7 @@ export function BookFlow({ service, addresses }: { service: Service; addresses: 
         setPaymentSecret(data.payment.client_secret);
         setCreatedBookingId(data.booking.id);
       } else {
-        router.replace(`/bookings/${data.booking.id}`);
+        router.replace(`/book/success?id=${data.booking.id}`);
       }
     } catch (e: any) {
       setError(e.message);
@@ -145,7 +145,7 @@ export function BookFlow({ service, addresses }: { service: Service; addresses: 
   }
 
   return (
-    <div className="space-y-4 py-2 lg:grid lg:grid-cols-[1fr,320px] lg:gap-6 lg:space-y-0">
+    <div className="space-y-4 py-2 pb-24 lg:grid lg:grid-cols-[1fr,320px] lg:gap-6 lg:space-y-0 lg:pb-0">
       <div className="space-y-4">
         <Card>
           <div className="flex items-center gap-4">
@@ -311,6 +311,45 @@ export function BookFlow({ service, addresses }: { service: Service; addresses: 
           <p className="font-mono-utility text-muted">Inc. VAT · GBP</p>
         </Card>
       </aside>
+
+      {/* Sticky Bottom CTA for Mobile Checkout */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-white/95 px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
+        <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] text-muted">Total</div>
+            <div className="text-[17px] font-extrabold leading-tight text-ink">{pence(q.total_pence)}</div>
+          </div>
+          {step !== 'review' ? (
+            <Button
+              onClick={() => {
+                if (step === 'when') setStep('where');
+                else if (step === 'where') setStep('pay');
+                else if (step === 'pay') setStep('review');
+              }}
+              disabled={step === 'where' && !addressId}
+              className="px-8"
+            >
+              Next
+            </Button>
+          ) : !paymentSecret ? (
+            <Button
+              onClick={submit}
+              disabled={submitting || !addressId}
+              className="px-8"
+            >
+              {submitting ? 'Booking…' : 'Confirm & Pay'}
+            </Button>
+          ) : (
+            <Button
+              onClick={confirmPayment}
+              disabled={payBusy}
+              className="px-8"
+            >
+              {payBusy ? 'Processing…' : 'Pay'}
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

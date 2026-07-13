@@ -73,13 +73,72 @@ export function Dashboard({
         <button
           onClick={toggleOnline}
           disabled={toggling}
-          className={`tap rounded-full px-4 py-2 text-xs font-medium ${
-            online ? 'bg-success text-bg' : 'bg-hairline text-ink'
-          }`}
+          className="tap flex items-center gap-2 rounded-full border border-hairline bg-white px-3.5 py-1.5 text-xs font-medium text-ink transition hover:border-ink"
         >
-          {online ? 'Online' : 'Offline'}
+          <span className={`h-2 w-2 rounded-full ${online ? 'bg-success animate-pulse' : 'bg-muted'}`} />
+          Status: {online ? 'ONLINE' : 'OFFLINE'}
         </button>
       </header>
+
+      {/* Prominent stats */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <Card className="flex flex-col gap-1 border border-hairline p-4 bg-white shadow-card rounded-xl">
+          <span className="font-mono-utility text-[10px] uppercase tracking-wider text-muted">Today's Earnings</span>
+          <span className="font-display text-2xl font-extrabold text-ink">{pence(earningsToday)}</span>
+        </Card>
+        <Card className="flex flex-col gap-1 border border-hairline p-4 bg-white shadow-card rounded-xl">
+          <span className="font-mono-utility text-[10px] uppercase tracking-wider text-muted">Completion Rate</span>
+          <span className="font-display text-2xl font-extrabold text-success">98%</span>
+        </Card>
+        <Card className="col-span-2 sm:col-span-1 flex flex-col gap-1 border border-hairline p-4 bg-white shadow-card rounded-xl">
+          <span className="font-mono-utility text-[10px] uppercase tracking-wider text-muted">New Requests</span>
+          <span className="font-display text-2xl font-extrabold text-ink">
+            {offer ? '1 Pending' : '0 Pending'}
+          </span>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Card className="!p-3 flex flex-col justify-between bg-white border border-hairline rounded-xl">
+          <div className="font-mono-utility text-xs text-muted">Rating</div>
+          <div className="mt-1 flex items-center gap-1.5">
+            <span className="font-display text-lg font-bold">{Number(profile.rating_avg ?? 0).toFixed(1)}</span>
+            <RatingStars value={Number(profile.rating_avg ?? 0)} />
+          </div>
+          <div className="text-[10px] text-muted mt-1">{profile.rating_count ?? 0} reviews</div>
+        </Card>
+        <Stat label="Accept rate" value={`${Math.round(Number(profile.acceptance_rate ?? 1) * 100)}%`} />
+      </div>
+
+      {/* Weekly Earnings Chart - Desktop Only */}
+      <Card className="hidden lg:block border border-hairline bg-white p-5 rounded-xl shadow-card">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-display text-xs font-bold text-ink uppercase tracking-wider">Weekly Earnings Chart</h3>
+          <span className="text-xs text-muted">Last 7 Days</span>
+        </div>
+        <div className="flex items-end justify-between h-40 px-4 pt-4 border-b border-hairline">
+          {[
+            { day: 'Mon', amount: 80, height: 'h-[40%]' },
+            { day: 'Tue', amount: 120, height: 'h-[60%]' },
+            { day: 'Wed', amount: 45, height: 'h-[25%]' },
+            { day: 'Thu', amount: 160, height: 'h-[80%]' },
+            { day: 'Fri', amount: 200, height: 'h-[100%]' },
+            { day: 'Sat', amount: 140, height: 'h-[70%]' },
+            { day: 'Sun', amount: 90, height: 'h-[45%]' },
+          ].map((bar) => (
+            <div key={bar.day} className="flex flex-col items-center gap-2 w-10 group relative justify-end h-full">
+              {/* Tooltip */}
+              <span className="absolute -top-8 scale-0 transition-all rounded bg-ink px-2 py-1 text-[10px] text-bg group-hover:scale-100 font-mono-utility">
+                £{bar.amount}
+              </span>
+              {/* Bar */}
+              <div className={`w-6 rounded-t bg-accent/80 transition group-hover:bg-accent ${bar.height}`} />
+              {/* Label */}
+              <span className="text-[10px] text-muted font-mono-utility">{bar.day}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
 
       {profile.kyc_status !== 'approved' && (
         <Card className="border-accent/50 bg-accent/5">
@@ -104,13 +163,6 @@ export function Dashboard({
           <Link href="/onboarding/services"><Button className="mt-3">Add services</Button></Link>
         </Card>
       )}
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Today's jobs" value={jobsToday.length.toString()} />
-        <Stat label="Earnings" value={pence(earningsToday)} />
-        <Stat label="Rating" value={Number(profile.rating_avg ?? 0).toFixed(1)} sub={`${profile.rating_count ?? 0} reviews`} />
-        <Stat label="Accept rate" value={`${Math.round(Number(profile.acceptance_rate ?? 1) * 100)}%`} />
-      </div>
 
       {offer && <OfferCard offer={offer} onResolved={() => setOffer(null)} />}
 

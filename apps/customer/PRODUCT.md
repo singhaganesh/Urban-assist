@@ -28,7 +28,7 @@ Premium, warm, trustworthy, calm (per docs/DESIGN-customer.md). Never loud or ur
 2. **Guest-first funnel** — browse and choose anonymously; authenticate (OTP-only, no passwords) only at the point of commitment.
 3. **One decision per screen** — the booking funnel is when → where → pay; never merge steps in ways that add cognitive load.
 4. **The lifecycle is the product** — booking confirmation is the midpoint: status tracking, chat, job-start OTP, and the rate→rebook loop drive retention.
-5. **Honest about V1** — manual assignment, no cart, no wallet ledger yet; UI never promises automation that doesn't exist.
+5. **Honest about V1** — manual assignment, no wallet ledger yet; UI never promises automation that doesn't exist. The "cart" holds exactly one selected service pending checkout (a saved selection, not a multi-item basket) — each booking is still one service, one decision flow.
 
 ## Accessibility & Inclusion
 

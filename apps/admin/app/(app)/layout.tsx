@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   TicketCheck,
   LogOut,
+  Menu
 } from 'lucide-react';
 
 const nav = [
@@ -36,9 +37,23 @@ export default async function AdminAppLayout({ children }: { children: React.Rea
   if (!profile || profile.role !== 'admin') redirect('/login');
 
   return (
-    <div className="min-h-screen flex bg-bg">
-      {/* Sidebar */}
-      <aside className="hidden lg:flex flex-col w-56 border-r border-hairline px-4 py-6 gap-1 shrink-0">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-bg">
+      {/* MOBILE HEADER */}
+      <header className="flex lg:hidden items-center justify-between border-b border-hairline bg-white px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-2">
+          <Menu className="h-5 w-5 text-muted" />
+          <span className="font-display text-sm font-bold text-ink">Admin Dashboard</span>
+        </div>
+        <button
+          className="text-xs font-bold text-accent uppercase tracking-wider"
+          onClick={() => redirect('/')}
+        >
+          Sync
+        </button>
+      </header>
+
+      {/* DESKTOP SIDEBAR */}
+      <aside className="hidden lg:flex flex-col w-56 border-r border-hairline px-4 py-6 gap-1 shrink-0 bg-white">
         <div className="px-2 mb-6">
           <span className="font-display text-base font-bold text-ink">HomeEase</span>
           <span className="ml-1 text-xs text-muted font-mono-utility">ADMIN</span>
@@ -69,8 +84,30 @@ export default async function AdminAppLayout({ children }: { children: React.Rea
         </div>
       </aside>
 
-      {/* Main content area */}
-      <main className="flex-1 overflow-auto p-6 lg:p-8">{children}</main>
+      {/* MAIN CONTENT AREA */}
+      <main className="flex-1 overflow-auto p-6 pb-24 lg:p-8 lg:pb-8">{children}</main>
+
+      {/* MOBILE BOTTOM NAVIGATION BAR */}
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-white pb-[env(safe-area-inset-bottom)] pt-2 shadow-lg lg:hidden">
+        <ul className="flex justify-around items-center">
+          {[
+            { href: '/', label: 'Home', icon: <LayoutDashboard className="h-5 w-5" /> },
+            { href: '/kyc', label: 'KYC', icon: <ShieldCheck className="h-5 w-5" /> },
+            { href: '/tickets', label: 'Tickets', icon: <TicketCheck className="h-5 w-5" /> },
+            { href: '/providers', label: 'More', icon: <Users className="h-5 w-5" /> },
+          ].map((it) => (
+            <li key={it.href}>
+              <Link
+                href={it.href}
+                className="flex flex-col items-center gap-0.5 px-3 text-[10px] font-mono-utility text-muted hover:text-ink"
+              >
+                {it.icon}
+                <span>{it.label}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </div>
   );
 }

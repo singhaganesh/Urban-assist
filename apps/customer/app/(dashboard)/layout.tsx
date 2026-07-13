@@ -1,5 +1,5 @@
 import { AppShell, NavItem } from '@urban-assist/ui';
-import { Home, CalendarClock, MessageCircle, UserRound } from 'lucide-react';
+import { Home, CalendarClock, ShoppingCart, UserRound } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { getSupabaseServer } from '@urban-assist/db/server';
@@ -7,8 +7,8 @@ import { getSupabaseServer } from '@urban-assist/db/server';
 const nav: NavItem[] = [
   { href: '/browse', label: 'Home', icon: <Home className="h-4 w-4" /> },
   { href: '/bookings', label: 'Bookings', icon: <CalendarClock className="h-4 w-4" /> },
-  { href: '/messages', label: 'Messages', icon: <MessageCircle className="h-4 w-4" /> },
-  { href: '/account', label: 'Account', icon: <UserRound className="h-4 w-4" /> },
+  { href: '/cart', label: 'Cart', icon: <ShoppingCart className="h-4 w-4" /> },
+  { href: '/account', label: 'Menu', icon: <UserRound className="h-4 w-4" /> },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {

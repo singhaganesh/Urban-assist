@@ -148,10 +148,30 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="card flex flex-col items-center justify-center gap-3 py-12 text-center">
-      <h3 className="font-display text-lg">{title}</h3>
-      {description && <p className="max-w-sm text-sm text-muted">{description}</p>}
-      {action}
+    <div className="card flex flex-col items-center justify-center gap-5 py-12 text-center border border-hairline bg-white rounded-xl shadow-card">
+      {/* Floating Box Illustration */}
+      <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl bg-bg/50 border border-hairline/60">
+        <svg
+          className="h-12 w-12 text-accent animate-bounce"
+          style={{ animationDuration: '3s' }}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+          <path d="m3.3 7 8.7 5 8.7-5" />
+          <path d="M12 22V12" />
+        </svg>
+        <span className="absolute bottom-1.5 h-1.5 w-12 rounded-full bg-ink/5 blur-[2px] animate-pulse" />
+      </div>
+      <div className="space-y-1">
+        <h3 className="font-display text-lg font-bold text-ink">{title}</h3>
+        {description && <p className="max-w-sm text-sm text-muted">{description}</p>}
+      </div>
+      {action && <div className="mt-2">{action}</div>}
     </div>
   );
 }

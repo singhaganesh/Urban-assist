@@ -4,10 +4,10 @@ import { AppShell, NavItem } from '@urban-assist/ui';
 import { Briefcase, CalendarDays, Wallet, UserRound } from 'lucide-react';
 
 const nav: NavItem[] = [
-  { href: '/', label: 'Today', icon: <Briefcase className="h-4 w-4" /> },
+  { href: '/', label: 'Requests', icon: <Briefcase className="h-4 w-4" /> },
   { href: '/schedule', label: 'Schedule', icon: <CalendarDays className="h-4 w-4" /> },
-  { href: '/earnings', label: 'Earnings', icon: <Wallet className="h-4 w-4" /> },
-  { href: '/account', label: 'Account', icon: <UserRound className="h-4 w-4" /> },
+  { href: '/earnings', label: 'Wallet', icon: <Wallet className="h-4 w-4" /> },
+  { href: '/account', label: 'Menu', icon: <UserRound className="h-4 w-4" /> },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {

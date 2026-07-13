@@ -57,6 +57,7 @@ unmatched = SLA breached, still undispatched (admin escalation view)
 ```
 
 Transition rules enforced **server-side** in one place (`packages/domain/src/bookings`):
+
 - customer cancel allowed in: `pending_match`, `unmatched`, `assigned` (existing `CANCELLABLE_STATUSES`) → card auto-refund (exists)
 - provider cancel-after-accept allowed in: `assigned`, `on_the_way` → booking returns to `pending_match`, reason recorded, admin + customer notified
 - reschedule (customer) allowed in: `pending_match`, `unmatched` (exists); rescheduling an `assigned` booking = cancel + rebook (existing rule, keep for initial phase)
@@ -81,6 +82,7 @@ Transition rules enforced **server-side** in one place (`packages/domain/src/boo
 ## Phase 1 — Database & domain layer
 
 ### 1.1 Migration `0010_taxonomy.sql`
+
 - `service_subcategories` (id uuid, category_id fk, slug unique, name, description, icon, sort_order)
 - `services` (id uuid, subcategory_id fk, slug unique, name, description, min_price_pence, max_price_pence, **base_price_pence**, duration_mins, is_popular, is_active, sort_order)
 - Extend `service_categories` with the 6 missing categories (14 total; keep existing 8 rows, update names/slugs where they diverge — map `gardening`→`gardening-outdoor`, `appliance-repair`→`appliance-services`, `painting`→`painting-decorating`; add `carpentry`, `pest-control`, `heating-gas`, `air-conditioning`, `roofing`, `moving-services`)
@@ -88,6 +90,7 @@ Transition rules enforced **server-side** in one place (`packages/domain/src/boo
 - RLS: public read on all three tables.
 
 ### 1.2 Migration `0011_dispatch.sql`
+
 - `bookings`: add `service_id uuid references services`, `commission_pence integer not null default 0`, `provider_net_pence integer not null default 0`, `assigned_by uuid references profiles`, `sla_due_at timestamptz`; make `provider_service_id` nullable.
 - `provider_services`: add `service_id uuid references services` (nullable during transition).
 - `booking_offers`: add `created_by uuid references profiles` (null = legacy cascade), `kind text not null default 'dispatch'`.
@@ -95,6 +98,7 @@ Transition rules enforced **server-side** in one place (`packages/domain/src/boo
 - RLS: admins read/write all bookings + offers (`user_role() = 'admin'` helper exists).
 
 ### 1.3 Domain changes (`packages/domain`)
+
 - `pricing`: add `COMMISSION_RATE`, `quote()` returns `commission_pence`, `provider_net_pence`.
 - `bookings/createBooking`: input takes `serviceId` (+ optional legacy providerServiceId); price from `services.base_price_pence`; **remove `sendNextOffer` call**; set `sla_due_at`; insert `booking.created` notification for every admin profile.
 - New `dispatch` module:
@@ -107,6 +111,7 @@ Transition rules enforced **server-side** in one place (`packages/domain/src/boo
 - Provider cancel-after-accept: `providerCancelBooking(bookingId, providerId, reason)` per state machine above.
 
 ### 1.4 Types
+
 - Regenerate/extend `packages/db/src/types.ts` for all new columns/tables.
 
 **Exit:** `supabase db push` clean; typecheck green; unit-test the state machine + candidate filter in `packages/domain` if test rig exists, else a scripted smoke test.
@@ -116,20 +121,24 @@ Transition rules enforced **server-side** in one place (`packages/domain/src/boo
 ## Phase 2 — Customer app
 
 ### 2.1 Booking entry (`book/[serviceId]`)
+
 - `serviceId` param becomes the **catalogue service id** (from `services` table). Page fetches service + subcategory + category from DB; no provider shown.
 - `BookFlow`: unchanged steps (address, date/time, payment method, promo, notes) but quote from `base_price_pence` via updated `quote()`; POST body sends `service_id`.
 - Confirmation screen + booking detail: expectation copy — "Booking received. We'll confirm your professional within 2 hours (8am–8pm). You'll get a notification as soon as they accept." (loophole 2 customer side)
 
 ### 2.2 Browse/services pages
+
 - `services/`, `services/[category]/`, `services/[category]/[service]/`, `browse/`: read taxonomy from DB instead of the TS file (icons still from `services-data.ts` icon map by slug). "Book now" links carry the DB service id.
 
 ### 2.3 Booking lifecycle surface
+
 - `bookings/[id]`: status timeline for new states — Awaiting confirmation → Professional assigned (name, photo, rating once `assigned`) → En route → Arrived (show OTP code big) → In progress → Completed.
 - OTP display: from server-stored booking OTP (Phase 1.3), not client-derived.
 - Realtime: subscribe to own booking notifications (`booking.accepted`, `booking.cancelled_by_provider`, reschedule outcomes).
 - Cancel/reschedule: already implemented — verify statuses against new state machine, update copy.
 
 ### 2.4 Payments
+
 - Keep capture-at-booking (current). Add visible refund state on cancelled bookings (payments row already flips to `refunded`).
 
 **Exit:** end-to-end manual test — book a cleaning service as customer, booking appears `pending_match` with `sla_due_at`, money captured, admin notification row exists.
@@ -139,14 +148,17 @@ Transition rules enforced **server-side** in one place (`packages/domain/src/boo
 ## Phase 3 — Admin app: dispatch console
 
 ### 3.1 Theme alignment
+
 - Wrap admin in `AppShell` with customer tokens; replace ad-hoc styles on existing pages (dashboard, bookings, providers, kyc, tickets) with `@urban-assist/ui` components. One pass, no functional change.
 
 ### 3.2 Dispatch queue (rework `(app)/bookings/`)
+
 - Default tab **"Needs assignment"**: `pending_match` ordered by `sla_due_at` ASC; red highlight past SLA (`unmatched` escalation view — loophole 2).
 - Tabs: Needs assignment / Awaiting provider response (open dispatch offer) / Active (assigned…in_progress) / Completed / Cancelled.
 - Realtime badge: subscribe to `booking.created` notifications → live count + browser notification (loophole 2 admin side).
 
 ### 3.3 Booking detail + assign flow (new page `(app)/bookings/[id]`)
+
 - Full booking info: service (category ▸ subcategory ▸ service), schedule, address + map link, customer info, price/commission split, notes, payment state, history of offers/declines.
 - **Candidate panel**: `GET /api/bookings/[id]/candidates` → `listCandidates` output. Each row: name, avatar, rating, distance, jobs today, "Available ✓ / on holiday ✗", skill match level (exact service / same subcategory). Disabled rows show *why* they're filtered (conflict, time-off, radius).
 - Assign button → `POST /api/bookings/[id]/assign { provider_id }` → creates dispatch offer. UI flips to "Awaiting response (deadline countdown)". Reassign/withdraw available while pending.
@@ -154,6 +166,7 @@ Transition rules enforced **server-side** in one place (`packages/domain/src/boo
 - Admin cancel booking (with reason) → refund path fires; both parties notified.
 
 ### 3.4 Admin APIs (all under `apps/admin/app/api/`)
+
 - `GET /api/bookings/[id]` (detail), `GET /api/bookings/[id]/candidates`, `POST /api/bookings/[id]/assign`, `POST /api/bookings/[id]/unassign`, `POST /api/bookings/[id]/cancel`. All: admin-role guard + zod.
 
 **Exit:** manual test — the Phase 2 booking shows in queue, candidates listed correctly (seed one approved provider with matching skill), assign fires notification, decline returns it to queue with reason.
@@ -163,27 +176,33 @@ Transition rules enforced **server-side** in one place (`packages/domain/src/boo
 ## Phase 4 — Provider app: assignment surface
 
 ### 4.1 Notification centre
+
 - `notifications` bell in `AppShell` header (unread count via realtime), new page `(app)/notifications`: list, mark-read on open, mark-all-read. Types rendered: assignment, cancellation, payout, KYC.
 
 ### 4.2 Assignment card (replaces cascade OfferCard on dashboard)
+
 - Realtime listener switches from `offer.new` to `booking.assigned`.
 - Card shows **full booking details** (service, date/time, address, customer first name, pay = `provider_net_pence`, notes) + response deadline (hours, not 90 s) + **Accept / Decline (reason required — dropdown: schedule conflict, too far, unwell, other + text)**.
 - Accept → job appears in Today/Schedule; Decline → card clears, admin notified. Reuses `PATCH /api/offers/[id]` pointed at `respondToDispatchOffer`.
 - Pending assignments also listed on `/notifications` and dashboard (survives page reload — fetch open dispatch offers server-side, already done for `openOffer`).
 
 ### 4.3 Jobs history
+
 - New `(app)/jobs` page: tabs Upcoming / Completed / Cancelled, paginated, linking to existing job detail.
 
 ### 4.4 Job execution fixes
+
 - **Server-side OTP**: `PATCH /api/jobs/[id]/status` validates the 4-digit code against the booking's stored OTP for the `in_progress` transition; client just posts the code (fixes audit §3.3).
 - **Completion photos**: upload to `completion-photos` (private) under path `{booking_id}/{filename}` (matches RLS); render via `createSignedUrl`. Then delete legacy `completion` bucket usage.
 - Provider cancel-after-accept button on job detail (`assigned`/`on_the_way` only) with reason → `providerCancelBooking`.
 - Earnings shown = `provider_net_pence` everywhere (dashboard stat, job detail "You earn", earnings page; commission line visible on job detail).
 
 ### 4.5 Missing API routes (unblock built UI)
+
 - Port from customer app (logic already in domain/`messages`, `reviews`, `cash-confirm`, `support` routes exist there): create provider-side `POST /api/messages`, `POST /api/reviews`, `POST /api/cash-confirm`, `POST /api/support`.
 
 ### 4.6 Availability semantics
+
 - Dashboard toggle relabel: "Available for work"; copy pass on all "offers/matching engine" strings (dashboard, schedule empty states, services editor).
 
 **Exit:** full happy path on staging: book → admin assign → provider accepts → en-route → arrived → customer OTP → in progress → complete with photo → cash confirm / card already captured → both reviews.

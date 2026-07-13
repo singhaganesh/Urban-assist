@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getSupabaseServer } from '@urban-assist/db/server';
 import { BookingDetail } from './booking-detail';
 
@@ -18,11 +18,14 @@ export default async function BookingPage({ params }: { params: { id: string } }
     .eq('booking_id', params.id)
     .single();
   const { data: { user } } = await db.auth.getUser();
+  if (!user) {
+    redirect('/login');
+  }
   const { data: existingReview } = await db
     .from('reviews')
     .select('id')
     .eq('booking_id', params.id)
-    .eq('author_id', user!.id)
+    .eq('author_id', user.id)
     .maybeSingle();
   return <BookingDetail booking={booking as any} payment={payment as any} hasReview={!!existingReview} />;
 }

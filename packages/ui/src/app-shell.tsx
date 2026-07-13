@@ -22,6 +22,9 @@ export function AppShell({
   brand: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const isSuccessPage = pathname === '/book/success' || pathname?.endsWith('/success');
+
   return (
     <div className="min-h-dvh bg-bg lg:flex">
       {/* Desktop sidebar */}
@@ -29,9 +32,9 @@ export function AppShell({
         <div className="mb-8 font-display text-lg">{brand}</div>
         <SidebarNav items={nav} />
       </aside>
-
+ 
       {/* Content */}
-      <main className="flex-1 pb-24 lg:pb-12">
+      <main className={cn("flex-1 pb-24 lg:pb-12", isSuccessPage && "pb-0")}>
         <header className="flex items-center justify-between px-5 py-4 lg:hidden">
           <div className="font-display text-base">{brand}</div>
         </header>
@@ -39,18 +42,20 @@ export function AppShell({
           {children}
         </div>
       </main>
-
+ 
       {/* Mobile bottom tab bar */}
-      <nav
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
-        aria-label="Primary"
-      >
-        <ul className="mx-auto flex max-w-xl items-stretch justify-around">
-          {nav.map((it) => (
-            <TabLink key={it.href} item={it} />
-          ))}
-        </ul>
-      </nav>
+      {!isSuccessPage && (
+        <nav
+          className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
+          aria-label="Primary"
+        >
+          <ul className="mx-auto flex max-w-xl items-stretch justify-around">
+            {nav.map((it) => (
+              <TabLink key={it.href} item={it} />
+            ))}
+          </ul>
+        </nav>
+      )}
     </div>
   );
 }

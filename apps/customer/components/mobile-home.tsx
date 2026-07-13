@@ -1,8 +1,9 @@
 'use client';
-import { MapPin, ChevronDown, Grid3X3, Star, ArrowRight, Gift, Home, CalendarClock, HelpCircle, User, ChevronUp } from 'lucide-react';
+import { MapPin, ChevronDown, Grid3X3, Star, ArrowRight, Gift, Home, CalendarClock, HelpCircle, User, ChevronUp, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
 import type { HomepageData, HomepageCategory, HomepageService, HomepageReview } from '../lib/homepage-data';
+import { Logo } from '@urban-assist/ui';
 import { getCategoryIcon } from '../lib/homepage-data';
 import { pence } from '@urban-assist/lib';
 import { PostcodeGate } from './postcode-gate';
@@ -22,8 +23,8 @@ function BottomNav() {
         {[
           { icon: Home, label: 'Home', href: '/', active: true },
           { icon: CalendarClock, label: 'Bookings', href: '/bookings' },
-          { icon: HelpCircle, label: 'Help', href: '/help' },
-          { icon: User, label: 'Profile', href: '/account' },
+          { icon: ShoppingCart, label: 'Cart', href: '/cart' },
+          { icon: User, label: 'Menu', href: '/account' },
         ].map((item) => (
           <li key={item.label}>
             <Link
@@ -90,28 +91,265 @@ function MobileHero({ promoCode }: { promoCode: HomepageData['promoCode'] }) {
   );
 }
 
-/* ── Quick Service Grid (4x2) ──────────────────────────── */
+/* ── Quick Service Grid (Bento Grid 2-column) ──────────── */
 
 function QuickServiceGrid({ categories }: { categories: HomepageCategory[] }) {
-  const tiles = categories.slice(0, 7).map((cat) => ({
-    icon: getCategoryIcon(cat.icon),
-    label: cat.name,
-    href: `/services/${cat.slug}`,
-    color: ['#C1622E', '#6B8F6B', '#1F3A4D', '#D9A441', '#C1622E', '#6B8F6B', '#1F3A4D'][categories.indexOf(cat) % 7] ?? '#6B6A62',
-  }));
-  tiles.push({ icon: Grid3X3, label: 'All Services', href: '/services', color: '#6B6A62' });
+  const badgeColors: Record<string, { bg: string; label: string }> = {
+    sparkles: { bg: '#6B8F6B', label: 'Top Rated' },
+    wrench: { bg: '#C1622E', label: 'Popular' },
+    zap: { bg: '#D9A441', label: 'Popular' },
+    settings: { bg: '#C1622E', label: 'Trending' },
+    leaf: { bg: '#6B8F6B', label: 'Trending' },
+    hammer: { bg: '#1F3A4D', label: 'Popular' },
+    paintbrush: { bg: '#1F3A4D', label: 'Popular' },
+    lock: { bg: '#1F3A4D', label: 'New' },
+  };
+
+  const getStripeStyle = (type: 'A' | 'B') => {
+    if (type === 'B') {
+      return {
+        background: 'repeating-linear-gradient(135deg, #E9F0E9, #E9F0E9 10px, #DEE9DE 10px, #DEE9DE 20px)',
+      };
+    }
+    return {
+      background: 'repeating-linear-gradient(135deg, #EDE6D8, #EDE6D8 10px, #E4DBC9 10px, #E4DBC9 20px)',
+    };
+  };
+
+  const cleaning = categories.find((c) => c.slug.includes('cleaning') || c.id === 'cleaning') || categories[0];
+  const plumbing = categories.find((c) => c.slug.includes('plumbing') || c.id === 'plumbing') || categories[1];
+  const electrical = categories.find((c) => c.slug.includes('electrical') || c.id === 'electrical') || categories[2];
+  const heating = categories.find((c) => c.slug.includes('heating') || c.id === 'heating') || categories[3];
+  const handyman = categories.find((c) => c.slug.includes('handyman') || c.id === 'handyman') || categories[4];
+  const painting = categories.find((c) => c.slug.includes('painting') || c.id === 'painting') || categories[5];
+  const gardening = categories.find((c) => c.slug.includes('gardening') || c.id === 'gardening') || categories[6];
+
+  if (!cleaning || !plumbing) {
+    return null;
+  }
+
+  const tiles = [
+    {
+      id: cleaning.id,
+      type: 'feature' as const,
+      category: cleaning,
+      slug: cleaning.slug,
+      name: cleaning.name,
+      icon: cleaning.icon,
+      stripeType: 'B' as const,
+      caption: 'Cleaning',
+      badge: { bg: '#6B8F6B', label: 'Top Rated' },
+      spanClass: 'col-span-2',
+    },
+    {
+      id: plumbing.id,
+      type: 'standard' as const,
+      category: plumbing,
+      slug: plumbing.slug,
+      name: plumbing.name,
+      icon: plumbing.icon,
+      stripeType: 'A' as const,
+      caption: 'Plumbing',
+      badge: badgeColors[plumbing.icon],
+      spanClass: 'col-span-1',
+    },
+    {
+      id: electrical.id,
+      type: 'standard' as const,
+      category: electrical,
+      slug: electrical.slug,
+      name: electrical.name,
+      icon: electrical.icon,
+      stripeType: 'A' as const,
+      caption: 'Electrical',
+      badge: badgeColors[electrical.icon],
+      spanClass: 'col-span-1',
+    },
+    {
+      id: heating.id,
+      type: 'standard' as const,
+      category: heating,
+      slug: heating.slug,
+      name: heating.name,
+      icon: heating.icon,
+      stripeType: 'A' as const,
+      caption: 'Heating',
+      badge: badgeColors[heating.icon],
+      spanClass: 'col-span-1',
+    },
+    {
+      id: handyman.id,
+      type: 'standard' as const,
+      category: handyman,
+      slug: handyman.slug,
+      name: handyman.name,
+      icon: handyman.icon,
+      stripeType: 'A' as const,
+      caption: 'Handyman',
+      badge: badgeColors[handyman.icon],
+      spanClass: 'col-span-1',
+    },
+    {
+      id: painting.id,
+      type: 'standard' as const,
+      category: painting,
+      slug: painting.slug,
+      name: painting.name,
+      icon: painting.icon,
+      stripeType: 'A' as const,
+      caption: 'Painting',
+      badge: badgeColors[painting.icon],
+      spanClass: 'col-span-1',
+    },
+    {
+      id: 'all-services',
+      type: 'all-services' as const,
+      slug: '',
+      name: 'All Services',
+      icon: 'grid',
+      stripeType: 'A' as const,
+      caption: 'Browse All',
+      badge: { bg: '#1F3A4D', label: 'Browse' },
+      spanClass: 'col-span-1',
+    },
+    {
+      id: gardening.id,
+      type: 'wide' as const,
+      category: gardening,
+      slug: gardening.slug,
+      name: gardening.name,
+      icon: gardening.icon,
+      stripeType: 'B' as const,
+      caption: 'Gardening',
+      badge: badgeColors[gardening.icon],
+      spanClass: 'col-span-2',
+    },
+  ];
 
   return (
-    <section className="lg:hidden bg-white px-4 py-4">
-      <div className="grid grid-cols-4 gap-3">
-        {tiles.map((s) => {
-          const Icon = s.icon;
+    <section className="lg:hidden bg-bg px-4 py-4">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-[16px] font-extrabold text-ink">Explore our services</h3>
+        <Link href="/services" className="text-[12px] font-semibold text-accent hover:text-accent-hover flex items-center gap-0.5">
+          View all <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3.5">
+        {tiles.map((tile) => {
+          const Icon = tile.icon === 'grid' ? Grid3X3 : getCategoryIcon(tile.icon);
+          const href = tile.type === 'all-services' ? '/services' : `/services/${tile.slug}`;
+
+          if (tile.type === 'feature' || tile.type === 'wide') {
+            return (
+              <Link
+                key={tile.id}
+                href={href}
+                className={`group card-shadow card overflow-hidden rounded-xl transition hover:border-accent flex flex-row h-24 ${tile.spanClass}`}
+                style={{ borderColor: '#ECE6D9' }}
+              >
+                <div className="p-3 flex-1 flex flex-col justify-between min-w-0">
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      {tile.badge && (
+                        <span
+                          className="rounded px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.04em] text-white"
+                          style={{ background: tile.badge.bg }}
+                        >
+                          {tile.badge.label}
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="text-[13px] font-bold leading-tight text-ink group-hover:text-accent transition-colors truncate">
+                      {tile.name}
+                    </h4>
+                  </div>
+                  {tile.category && (
+                    <span className="text-[11px] font-medium text-success block">
+                      From {pence(tile.category.minPricePence)}
+                    </span>
+                  )}
+                </div>
+                <div className="relative w-1/3 flex items-center justify-center overflow-hidden border-l border-hairline shrink-0" style={getStripeStyle(tile.stripeType)}>
+                  <span className="font-mono text-[9px] text-[#8A8574] select-none text-center px-1">
+                    {tile.caption}
+                  </span>
+                  <span className="absolute bottom-2 right-2 h-6 w-6 grid place-items-center rounded bg-white shadow-sm border border-input-border">
+                    <Icon className="h-3.5 w-3.5 text-ink" />
+                  </span>
+                </div>
+              </Link>
+            );
+          }
+
+          if (tile.type === 'all-services') {
+            return (
+              <Link
+                key={tile.id}
+                href={href}
+                className={`group card-shadow card overflow-hidden rounded-xl transition hover:border-accent flex flex-col justify-between h-28 ${tile.spanClass}`}
+                style={{ borderColor: '#ECE6D9' }}
+              >
+                <div className="relative h-14 flex items-center justify-center overflow-hidden" style={getStripeStyle(tile.stripeType)}>
+                  <span className="font-mono text-[9px] text-[#8A8574] select-none text-center px-1">
+                    {tile.caption}
+                  </span>
+                  <span
+                    className="absolute top-2 left-2 rounded px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.04em] text-white"
+                    style={{ background: tile.badge.bg }}
+                  >
+                    {tile.badge.label}
+                  </span>
+                </div>
+                <div className="p-2 pt-1 flex flex-col justify-between flex-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <h4 className="text-[11px] font-bold leading-tight text-ink group-hover:text-accent transition-colors truncate">
+                      {tile.name}
+                    </h4>
+                    <span className="flex-shrink-0 grid h-6 w-6 place-items-center rounded bg-ink/5">
+                      <Grid3X3 className="h-3 w-3 text-ink" />
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            );
+          }
+
           return (
-            <Link key={s.label} href={s.href} className="flex flex-col items-center gap-1.5">
-              <span className="grid h-11 w-11 place-items-center rounded-xl" style={{ background: `${s.color}12` }}>
-                <Icon className="h-5 w-5" style={{ color: s.color }} />
-              </span>
-              <span className="text-[10px] font-semibold text-center leading-tight text-ink">{s.label}</span>
+            <Link
+              key={tile.id}
+              href={href}
+              className={`group card-shadow card overflow-hidden rounded-xl transition hover:border-accent flex flex-col justify-between h-28 ${tile.spanClass}`}
+              style={{ borderColor: '#ECE6D9' }}
+            >
+              <div className="relative h-14 flex items-center justify-center overflow-hidden" style={getStripeStyle(tile.stripeType)}>
+                <span className="font-mono text-[9px] text-[#8A8574] select-none text-center px-1">
+                  {tile.caption}
+                </span>
+                {tile.badge && (
+                  <span
+                    className="absolute top-2 left-2 rounded px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.04em] text-white"
+                    style={{ background: tile.badge.bg }}
+                  >
+                    {tile.badge.label}
+                  </span>
+                )}
+              </div>
+              <div className="p-2 pt-1 flex flex-col justify-between flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-1">
+                  <h4 className="text-[11px] font-bold leading-tight text-ink group-hover:text-accent transition-colors truncate">
+                    {tile.name}
+                  </h4>
+                  <span className="flex-shrink-0 grid h-6 w-6 place-items-center rounded bg-ink/5">
+                    <Icon className="h-3 w-3 text-ink" />
+                  </span>
+                </div>
+                {tile.category && (
+                  <span className="text-[10px] font-medium text-success block">
+                    From {pence(tile.category.minPricePence)}
+                  </span>
+                )}
+              </div>
             </Link>
           );
         })}
@@ -321,7 +559,7 @@ function MobileFooter() {
     <footer className="lg:hidden pb-20" style={{ background: '#1F3A4D' }}>
       <div className="px-4 py-8">
         <div className="mb-6 flex items-center gap-2.5">
-          <span className="block h-9 w-9 rounded-[9px] border border-white/20 bg-hairline/20" />
+          <Logo inverted />
           <span className="text-[15px] font-extrabold text-[#F5F1EB]">Urban Assist</span>
         </div>
 

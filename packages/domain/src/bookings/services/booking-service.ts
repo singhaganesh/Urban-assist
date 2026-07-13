@@ -3,6 +3,7 @@ import { quote } from '@urban-assist/domain/pricing';
 import { sendNextOffer } from '@urban-assist/domain/matching';
 import { track } from '@urban-assist/domain/analytics';
 import { createBookingIntent, refundPaymentIntent } from '@urban-assist/integrations/stripe';
+import { sendPush } from '@urban-assist/integrations/firebase';
 
 export interface CreateBookingInput {
   customerId: string;
@@ -185,7 +186,7 @@ export async function cancelBooking(
 ): Promise<void> {
   const { data: booking, error: getErr } = await admin
     .from('bookings')
-    .select('id, customer_id, status')
+    .select('id, customer_id, provider_id, status')
     .eq('id', input.bookingId)
     .single();
   if (getErr || !booking) throw new Error('booking_not_found');
@@ -226,6 +227,15 @@ export async function cancelBooking(
     type: 'booking.cancelled',
     payload: { booking_id: input.bookingId, reason: input.reason ?? null },
   });
+
+  // Tell the assigned provider their job is gone.
+  if (booking.provider_id) {
+    await sendPush(admin, booking.provider_id, {
+      title: 'Booking cancelled',
+      body: 'The customer cancelled this booking. Your schedule has been freed up.',
+      data: { booking_id: input.bookingId },
+    }).catch((e) => console.warn('[urban-assist] push failed:', e.message));
+  }
 }
 
 export interface RescheduleBookingInput {

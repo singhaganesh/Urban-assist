@@ -7,6 +7,7 @@ import {
   providerOnlineKey, providerLocKey, bookingLockKey,
   TTL,
 } from '@urban-assist/integrations/redis';
+import { sendPush } from '@urban-assist/integrations/firebase';
 
 interface Candidate {
   provider_id: string;
@@ -236,6 +237,11 @@ export async function respondToOffer(
           type: 'booking.matched',
           payload: { booking_id: offer.booking_id, provider_id: providerId },
         });
+        await sendPush(db, booking.customer_id, {
+          title: 'Professional assigned',
+          body: 'A professional has accepted your booking. View details in the app.',
+          data: { booking_id: offer.booking_id, link: `/bookings/${offer.booking_id}` },
+        }).catch((e) => console.warn('[urban-assist] push failed:', e.message));
       }
       return { result: 'accepted' as const, bookingId };
     }

@@ -92,13 +92,15 @@ export function LoginForm() {
             <p className="text-xs text-muted">We&apos;ll text you a 6-digit code to sign in.</p>
           </div>
           {err && <p className="text-xs text-danger">{err}</p>}
-          <button
-            type="submit"
-            disabled={busy || local.length !== 10}
-            className="tap w-full rounded-xl bg-accent px-5 py-3 text-sm font-bold text-white transition hover:bg-accent-hover disabled:pointer-events-none disabled:opacity-50"
-          >
-            {busy ? 'Sending…' : 'Send code'}
-          </button>
+          <div className="fixed inset-x-0 bottom-0 border-t border-hairline bg-white p-4 lg:static lg:border-0 lg:bg-transparent lg:p-0">
+            <button
+              type="submit"
+              disabled={busy || local.length !== 10}
+              className="tap w-full rounded-xl bg-accent px-5 py-3 text-sm font-bold text-white transition hover:bg-accent-hover disabled:pointer-events-none disabled:opacity-50"
+            >
+              {busy ? 'Sending…' : 'Send code'}
+            </button>
+          </div>
         </form>
       ) : (
         <form onSubmit={verify} className="space-y-4">
@@ -120,13 +122,15 @@ export function LoginForm() {
             <p className="text-xs text-muted">Sent to {e164}</p>
           </div>
           {err && <p className="text-xs text-danger">{err}</p>}
-          <button
-            type="submit"
-            disabled={busy || otp.length < 6}
-            className="tap w-full rounded-xl bg-accent px-5 py-3 text-sm font-bold text-white transition hover:bg-accent-hover disabled:pointer-events-none disabled:opacity-50"
-          >
-            {busy ? 'Verifying…' : 'Verify and continue'}
-          </button>
+          <div className="fixed inset-x-0 bottom-0 border-t border-hairline bg-white p-4 lg:static lg:border-0 lg:bg-transparent lg:p-0">
+            <button
+              type="submit"
+              disabled={busy || otp.length < 6}
+              className="tap w-full rounded-xl bg-accent px-5 py-3 text-sm font-bold text-white transition hover:bg-accent-hover disabled:pointer-events-none disabled:opacity-50"
+            >
+              {busy ? 'Verifying…' : 'Verify and continue'}
+            </button>
+          </div>
           <button
             type="button"
             onClick={() => { setPhase('phone'); setOtp(''); setErr(null); }}

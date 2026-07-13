@@ -79,7 +79,7 @@ export async function createBooking(
       bookingId: booking.id,
       customerId: input.customerId,
       amountPence: q.total_pence,
-      description: `HomeEase booking ${booking.short_code}`,
+      description: `Urban Assist booking ${booking.short_code}`,
     });
     await admin.from('payments').insert({
       booking_id: booking.id,

@@ -3,8 +3,8 @@ import './globals.css';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'HomeEase Pro — earn on your schedule',
-  description: 'Provider app for HomeEase — manage jobs, schedule and earnings.',
+  title: 'Urban Assist Pro — earn on your schedule',
+  description: 'Provider app for Urban Assist — manage jobs, schedule and earnings.',
   manifest: '/manifest.webmanifest',
 };
 

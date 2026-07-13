@@ -1,0 +1,227 @@
+'use client';
+// Two-pane messaging center. Desktop: list + chat pane. Mobile: list only.
+// ponytail: no attach button (no attachment schema/storage) and no unread badges (no read_at column) — add schema first.
+
+import * as React from 'react';
+import { useRouter } from 'next/navigation';
+import { Button, EmptyState } from '@urban-assist/ui';
+import { getSupabaseBrowser as supabase } from '@urban-assist/db/browser';
+import { Phone } from 'lucide-react';
+
+type Conversation = {
+  id: string;
+  short_code: string;
+  provider: { id: string; full_name: string | null; avatar_url: string | null; phone: string | null };
+  category: { name: string } | null;
+  messages: any[];
+};
+
+export function MessagesClient({ conversations, userId }: { conversations: Conversation[]; userId: string }) {
+  const router = useRouter();
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [search, setSearch] = React.useState('');
+  const [draft, setDraft] = React.useState('');
+  const [history, setHistory] = React.useState<Record<string, any[]>>(() =>
+    Object.fromEntries(conversations.map((c) => [c.id, c.messages ?? []])),
+  );
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+
+  const selected = conversations.find((c) => c.id === selectedId) ?? null;
+
+  // Realtime: new messages for the open conversation (same pattern as booking-detail).
+  React.useEffect(() => {
+    if (!selectedId) return;
+    const sb = supabase();
+    const ch = sb
+      .channel(`messages-${selectedId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `booking_id=eq.${selectedId}` },
+        (p) =>
+          setHistory((h) => {
+            const cur = h[selectedId] ?? [];
+            if (cur.some((m) => m.id === (p.new as any).id)) return h;
+            return { ...h, [selectedId]: [...cur, p.new] };
+          }),
+      )
+      .subscribe();
+    return () => {
+      sb.removeChannel(ch);
+    };
+  }, [selectedId]);
+
+  React.useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+  }, [selectedId, history]);
+
+  // ponytail: client filter, server search when volume
+  const q = search.trim().toLowerCase();
+  const filtered = q
+    ? conversations.filter(
+        (c) =>
+          (c.provider.full_name ?? '').toLowerCase().includes(q) ||
+          (c.category?.name ?? '').toLowerCase().includes(q),
+      )
+    : conversations;
+
+  function open(id: string) {
+    // ponytail: mobile reuses booking-detail chat; dedicated mobile chat route when needed
+    if (window.matchMedia('(min-width: 1024px)').matches) setSelectedId(id);
+    else router.push(`/bookings/${id}`);
+  }
+
+  async function send(e: React.FormEvent) {
+    e.preventDefault();
+    if (!draft.trim() || !selectedId) return;
+    const body = draft;
+    setDraft('');
+    await fetch('/api/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ booking_id: selectedId, content: body }),
+    });
+  }
+
+  if (!conversations.length) {
+    return (
+      <div className="space-y-4 py-2">
+        <h1 className="font-display text-xl">Messages</h1>
+        <EmptyState
+          title="No conversations yet"
+          description="Once a provider is matched to your booking, you'll be able to chat with them here."
+        />
+      </div>
+    );
+  }
+
+  const msgs = selected ? history[selected.id] ?? [] : [];
+
+  return (
+    <div className="py-2 lg:grid lg:h-[calc(100vh-9rem)] lg:grid-cols-[320px_1fr] lg:gap-4">
+      {/* Left: conversation list */}
+      <div className="flex min-h-0 flex-col space-y-3">
+        <h1 className="font-display text-xl">Messages</h1>
+        <input
+          className="tap w-full rounded-xl border border-hairline bg-white px-3 py-2 text-sm focus:border-ink focus:outline-none"
+          placeholder="Search conversations"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto">
+          {filtered.map((c) => {
+            const last = (history[c.id] ?? [])[history[c.id]?.length - 1];
+            const isSelected = c.id === selectedId;
+            return (
+              <li key={c.id}>
+                <button
+                  onClick={() => open(c.id)}
+                  className={`tap flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${
+                    isSelected ? 'bg-accent/10' : 'hover:bg-bg'
+                  }`}
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-hairline font-medium text-ink">
+                    {c.provider.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={c.provider.avatar_url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      (c.provider.full_name ?? '?').charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{c.provider.full_name}</span>
+                      {last && <span className="shrink-0 text-[11px] text-muted">{listStamp(last.created_at)}</span>}
+                    </div>
+                    <div className="text-[11px] text-muted">{c.category?.name}</div>
+                    <p className="truncate text-sm text-muted">{last?.content ?? 'Say hi to your provider'}</p>
+                  </div>
+                </button>
+              </li>
+            );
+          })}
+          {!filtered.length && <li className="px-3 py-4 text-sm text-muted">No matches for “{search}”.</li>}
+        </ul>
+      </div>
+
+      {/* Right: chat pane (desktop only) */}
+      <div className="hidden min-h-0 flex-col rounded-2xl border border-hairline bg-white lg:flex">
+        {!selected ? (
+          <div className="flex flex-1 items-center justify-center text-sm text-muted">Select a conversation</div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between border-b border-hairline px-4 py-3">
+              <div className="font-medium">
+                {selected.provider.full_name}{' '}
+                <span className="text-sm font-normal text-muted">
+                  ({selected.category?.name} · #{selected.short_code})
+                </span>
+              </div>
+              {selected.provider.phone && (
+                <a
+                  href={`tel:${selected.provider.phone}`}
+                  className="flex items-center gap-1 text-sm font-medium text-accent"
+                >
+                  <Phone className="h-4 w-4" /> Call
+                </a>
+              )}
+            </div>
+            <div ref={scrollRef} className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-4 py-3 text-sm">
+              {msgs.length === 0 && <p className="text-muted">No messages yet — say hi to your provider.</p>}
+              {msgs.map((m, i) => {
+                const label = dayLabel(m.created_at);
+                const showDivider = i === 0 || dayLabel(msgs[i - 1].created_at) !== label;
+                const mine = m.sender_id === userId;
+                return (
+                  <React.Fragment key={m.id}>
+                    {showDivider && <div className="py-1.5 text-center text-[11px] text-muted">{label}</div>}
+                    <div
+                      className={`flex max-w-[75%] flex-col rounded-xl px-3 py-2 ${
+                        mine ? 'ml-auto bg-accent text-white' : 'mr-auto bg-bg text-ink'
+                      }`}
+                    >
+                      <span>{m.content}</span>
+                      <span className={`mt-0.5 self-end text-[11px] ${mine ? 'text-white/70' : 'text-muted'}`}>
+                        {hhmm(m.created_at)}
+                      </span>
+                    </div>
+                  </React.Fragment>
+                );
+              })}
+            </div>
+            <form onSubmit={send} className="flex gap-2 border-t border-hairline p-3">
+              <input
+                className="tap flex-1 rounded-xl border border-hairline bg-white px-3 py-2 text-sm focus:border-ink focus:outline-none"
+                placeholder="Message your provider"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+              />
+              <Button type="submit" disabled={!draft.trim()}>
+                Send
+              </Button>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function hhmm(iso: string) {
+  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function dayLabel(iso: string) {
+  const d = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (d.toDateString() === today.toDateString()) return 'Today';
+  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function listStamp(iso: string) {
+  const d = new Date(iso);
+  if (d.toDateString() === new Date().toDateString()) return hhmm(iso);
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}

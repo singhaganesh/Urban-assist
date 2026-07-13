@@ -115,7 +115,7 @@ async function sendNext(bookingId: string) {
   try {
     const { data: booking } = await db
       .from('bookings')
-      .select('id, category_id, address_id, addresses!inner(lat,lng)')
+      .select('id, category_id, address_id, scheduled_at, addresses!inner(lat,lng)')
       .eq('id', bookingId)
       .single();
     if (!booking) return;
@@ -144,7 +144,7 @@ async function sendNext(bookingId: string) {
       .eq('booking_id', bookingId);
     const seen = new Set((prev ?? []).map((o: any) => o.provider_id));
 
-    const cands = (services as any[])
+    let cands = (services as any[])
       .filter((s: any) => {
         const pid = s.profiles?.id ?? s.provider_id;
         return online.has(pid) && s.profiles?.kyc_status === 'approved' && !seen.has(s.provider_id);
@@ -158,6 +158,43 @@ async function sendNext(bookingId: string) {
         return { id: s.provider_id, score: distScore * 0.5 + rating * 0.3 + accept * 0.2 };
       })
       .sort((a: any, b: any) => b.score - a.score);
+
+    // Availability filter — skipped when the booking has no scheduled time.
+    const scheduledAt = (booking as any).scheduled_at;
+    if (scheduledAt && cands.length) {
+      // Bookings are UK-only: derive the booking's local calendar date, weekday
+      // and wall-clock time in Europe/London via Intl (no tz library needed).
+      // en-CA gives ISO YYYY-MM-DD; h23 gives HH:MM:SS matching Postgres `time` text.
+      const when = new Date(scheduledAt);
+      const dateStr = when.toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+      const timeStr = when.toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hourCycle: 'h23' });
+      const weekday = new Date(`${dateStr}T00:00:00Z`).getUTCDay(); // 0=Sunday, same as availability_slots.weekday
+
+      const candIds = cands.map((c: any) => c.id);
+      const [{ data: offs }, { data: slots }] = await Promise.all([
+        db
+          .from('time_off')
+          .select('provider_id')
+          .in('provider_id', candIds)
+          .lte('start_date', dateStr)
+          .gte('end_date', dateStr),
+        db
+          .from('availability_slots')
+          .select('provider_id, weekday, start_time, end_time')
+          .in('provider_id', candIds),
+      ]);
+
+      const away = new Set((offs ?? []).map((o: any) => o.provider_id));
+      const hasSlots = new Set((slots ?? []).map((s: any) => s.provider_id));
+      const fits = new Set(
+        (slots ?? [])
+          .filter((s: any) => s.weekday === weekday && s.start_time <= timeStr && s.end_time >= timeStr)
+          .map((s: any) => s.provider_id),
+      );
+
+      // ponytail: no slots defined = always available; flip to opt-in once all providers set hours
+      cands = cands.filter((c: any) => !away.has(c.id) && (!hasSlots.has(c.id) || fits.has(c.id)));
+    }
 
     if (!cands.length) {
       await db.from('bookings').update({ status: 'unmatched' }).eq('id', bookingId);

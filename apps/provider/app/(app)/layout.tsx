@@ -32,5 +32,5 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     await db.from('profiles').update({ role: 'provider' }).eq('id', user.id);
   }
 
-  return <AppShell nav={nav} brand="HomeEase Pro">{children}</AppShell>;
+  return <AppShell nav={nav} brand="Urban Assist Pro">{children}</AppShell>;
 }

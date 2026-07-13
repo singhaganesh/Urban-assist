@@ -1,4 +1,4 @@
--- HomeEase core schema
+-- Urban Assist core schema
 -- Run with: supabase db push
 -- All money columns are integers in pence (avoid float).
 

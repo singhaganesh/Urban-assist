@@ -3,8 +3,9 @@ import * as React from 'react';
 import { Card, Button, Badge, Field, Input, EmptyState } from '@urban-assist/ui';
 import { getSupabaseBrowser as supabase } from '@urban-assist/db/browser';
 import { ukDate, ukDateTime } from '@urban-assist/lib';
-import { Calendar, Clock, Coffee, ShieldAlert, Plus, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Coffee, Plus, Trash2 } from 'lucide-react';
 
+// DB convention: weekday 0 = Sunday (matches JS getDay()). UI renders Monday-first.
 const WEEKDAYS = [
   'Sunday',
   'Monday',
@@ -14,12 +15,12 @@ const WEEKDAYS = [
   'Friday',
   'Saturday',
 ];
+const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Monday-first
 
-interface AvailabilitySlot {
-  id: string;
-  weekday: number;
-  start_time: string;
-  end_time: string;
+interface DayWindow {
+  enabled: boolean;
+  start: string; // 'HH:MM'
+  end: string;
 }
 
 interface TimeOff {
@@ -39,27 +40,35 @@ interface UpcomingJob {
   address: { line1: string; postcode: string };
 }
 
+function defaultWeek(): Record<number, DayWindow> {
+  const wk: Record<number, DayWindow> = {};
+  for (let d = 0; d < 7; d++) wk[d] = { enabled: false, start: '09:00', end: '17:00' };
+  return wk;
+}
+
+// '09:00' → '9', '17:30' → '5:30' — week-strip chip shorthand.
+function shortTime(t: string) {
+  const [h, m] = t.split(':').map(Number);
+  const h12 = h % 12 || 12;
+  return m ? `${h12}:${String(m).padStart(2, '0')}` : `${h12}`;
+}
+
 export default function SchedulePage() {
-  const [tab, setTab] = React.useState<'jobs' | 'hours' | 'timeoff'>('jobs');
+  const [tab, setTab] = React.useState<'jobs' | 'availability'>('jobs');
   const [loading, setLoading] = React.useState(true);
   const [userId, setUserId] = React.useState<string | null>(null);
 
-  // Data states
   const [jobs, setJobs] = React.useState<UpcomingJob[]>([]);
-  const [slots, setSlots] = React.useState<AvailabilitySlot[]>([]);
+  const [week, setWeek] = React.useState<Record<number, DayWindow>>(defaultWeek);
   const [timeOffList, setTimeOffList] = React.useState<TimeOff[]>([]);
 
-  // Form states for Availability
-  const [newWeekday, setNewWeekday] = React.useState('1'); // Monday default
-  const [newStart, setNewStart] = React.useState('09:00');
-  const [newEnd, setNewEnd] = React.useState('17:00');
-  const [slotsError, setSlotsError] = React.useState<string | null>(null);
+  const [saving, setSaving] = React.useState(false);
+  const [saved, setSaved] = React.useState(false);
+  const [scheduleError, setScheduleError] = React.useState<string | null>(null);
 
-  // Form states for Time Off
   const [newStartOff, setNewStartOff] = React.useState('');
   const [newEndOff, setNewEndOff] = React.useState('');
   const [timeOffError, setTimeOffError] = React.useState<string | null>(null);
-
   const [submitting, setSubmitting] = React.useState(false);
 
   React.useEffect(() => {
@@ -70,7 +79,6 @@ export default function SchedulePage() {
         if (!user) return;
         setUserId(user.id);
 
-        // Fetch jobs (today and future)
         const todayStr = new Date();
         todayStr.setHours(0, 0, 0, 0);
 
@@ -82,7 +90,6 @@ export default function SchedulePage() {
           .in('status', ['assigned', 'on_the_way', 'arrived', 'in_progress'])
           .order('scheduled_at');
 
-        // Fetch availability slots
         const { data: slotsData } = await sb
           .from('availability_slots')
           .select('*')
@@ -90,7 +97,6 @@ export default function SchedulePage() {
           .order('weekday')
           .order('start_time');
 
-        // Fetch time off
         const { data: timeOffData } = await sb
           .from('time_off')
           .select('*')
@@ -98,8 +104,17 @@ export default function SchedulePage() {
           .gte('end_date', todayStr.toISOString().split('T')[0])
           .order('start_date');
 
+        // ponytail: one window per day; multi-slot days collapse to first — extend to multi-window when a provider asks
+        const wk = defaultWeek();
+        const claimed = new Set<number>();
+        for (const s of slotsData ?? []) {
+          if (claimed.has(s.weekday)) continue;
+          claimed.add(s.weekday);
+          wk[s.weekday] = { enabled: true, start: s.start_time.slice(0, 5), end: s.end_time.slice(0, 5) };
+        }
+
         setJobs(jobsData as any ?? []);
-        setSlots(slotsData ?? []);
+        setWeek(wk);
         setTimeOffList(timeOffData ?? []);
       } catch (err) {
         console.error('Failed to load schedule data', err);
@@ -110,60 +125,45 @@ export default function SchedulePage() {
     loadData();
   }, []);
 
-  async function addSlot(e: React.FormEvent) {
-    e.preventDefault();
-    if (!userId) return;
-    setSlotsError(null);
-    setSubmitting(true);
-
-    try {
-      const weekdayInt = parseInt(newWeekday);
-      if (newStart >= newEnd) {
-        throw new Error('Start time must be before end time');
-      }
-
-      // Check overlap
-      const overlap = slots.some(
-        (s) =>
-          s.weekday === weekdayInt &&
-          ((newStart >= s.start_time && newStart < s.end_time) ||
-            (newEnd > s.start_time && newEnd <= s.end_time) ||
-            (newStart <= s.start_time && newEnd >= s.end_time))
-      );
-
-      if (overlap) {
-        throw new Error('This time slot overlaps with an existing slot');
-      }
-
-      const sb = supabase();
-      const { data, error } = await sb
-        .from('availability_slots')
-        .insert({
-          provider_id: userId,
-          weekday: weekdayInt,
-          start_time: newStart + ':00',
-          end_time: newEnd + ':00',
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      setSlots([...slots, data].sort((a, b) => a.weekday - b.weekday || a.start_time.localeCompare(b.start_time)));
-    } catch (err: any) {
-      setSlotsError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
+  function setDay(d: number, patch: Partial<DayWindow>) {
+    setWeek((w) => ({ ...w, [d]: { ...w[d], ...patch } }));
+    setSaved(false);
+    setScheduleError(null);
   }
 
-  async function deleteSlot(id: string) {
+  async function saveSchedule() {
+    if (!userId) return;
+    setScheduleError(null);
+    setSaved(false);
+
+    const invalid = DAY_ORDER.filter((d) => week[d].enabled && week[d].start >= week[d].end);
+    if (invalid.length) {
+      setScheduleError(`End time must be after start time: ${invalid.map((d) => WEEKDAYS[d]).join(', ')}`);
+      return;
+    }
+
+    setSaving(true);
     try {
       const sb = supabase();
-      const { error } = await sb.from('availability_slots').delete().eq('id', id);
-      if (error) throw error;
-      setSlots(slots.filter((s) => s.id !== id));
+      // Replace-all save: simplest model that matches "one window per day".
+      const { error: delErr } = await sb.from('availability_slots').delete().eq('provider_id', userId);
+      if (delErr) throw delErr;
+
+      const rows = DAY_ORDER.filter((d) => week[d].enabled).map((d) => ({
+        provider_id: userId,
+        weekday: d,
+        start_time: week[d].start + ':00',
+        end_time: week[d].end + ':00',
+      }));
+      if (rows.length) {
+        const { error: insErr } = await sb.from('availability_slots').insert(rows);
+        if (insErr) throw insErr;
+      }
+      setSaved(true);
     } catch (err: any) {
-      alert(err.message);
+      setScheduleError(err.message);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -204,13 +204,14 @@ export default function SchedulePage() {
   }
 
   async function deleteTimeOff(id: string) {
+    setTimeOffError(null);
     try {
       const sb = supabase();
       const { error } = await sb.from('time_off').delete().eq('id', id);
       if (error) throw error;
       setTimeOffList(timeOffList.filter((t) => t.id !== id));
     } catch (err: any) {
-      alert(err.message);
+      setTimeOffError(err.message);
     }
   }
 
@@ -236,26 +237,18 @@ export default function SchedulePage() {
         <button
           onClick={() => setTab('jobs')}
           className={`flex-1 rounded-lg py-2.5 text-xs font-mono-utility font-medium transition flex items-center justify-center gap-1.5 ${
-            tab === 'jobs' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'
+            tab === 'jobs' ? 'bg-ink text-bg shadow-sm' : 'text-muted hover:text-ink'
           }`}
         >
           <Calendar className="h-3.5 w-3.5" /> Agenda ({jobs.length})
         </button>
         <button
-          onClick={() => setTab('hours')}
+          onClick={() => setTab('availability')}
           className={`flex-1 rounded-lg py-2.5 text-xs font-mono-utility font-medium transition flex items-center justify-center gap-1.5 ${
-            tab === 'hours' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'
+            tab === 'availability' ? 'bg-ink text-bg shadow-sm' : 'text-muted hover:text-ink'
           }`}
         >
-          <Clock className="h-3.5 w-3.5" /> Working Hours
-        </button>
-        <button
-          onClick={() => setTab('timeoff')}
-          className={`flex-1 rounded-lg py-2.5 text-xs font-mono-utility font-medium transition flex items-center justify-center gap-1.5 ${
-            tab === 'timeoff' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'
-          }`}
-        >
-          <Coffee className="h-3.5 w-3.5" /> Time Off
+          <Clock className="h-3.5 w-3.5" /> Availability
         </button>
       </div>
 
@@ -303,147 +296,143 @@ export default function SchedulePage() {
         </section>
       )}
 
-      {/* Working Hours/Availability */}
-      {tab === 'hours' && (
-        <section className="space-y-4">
-          <Card className="space-y-3">
-            <h3 className="font-display text-sm font-semibold">Weekly Availability</h3>
-            <p className="text-xs text-muted">
-              Add the days and hours you are available to fulfill bookings. Our matching engine uses these slots to rank candidates.
-            </p>
-            {slots.length > 0 ? (
-              <ul className="space-y-2 divide-y divide-hairline">
-                {slots.map((s) => (
-                  <li key={s.id} className="flex items-center justify-between pt-2 first:pt-0">
-                    <div className="flex items-center gap-3">
-                      <Badge tone="ink" className="min-w-20 text-center justify-center">
-                        {WEEKDAYS[s.weekday]}
-                      </Badge>
-                      <span className="text-sm font-medium">
-                        {s.start_time.slice(0, 5)} - {s.end_time.slice(0, 5)}
-                      </span>
+      {/* Availability: week strip + weekly hours editor + time off, co-visible */}
+      {tab === 'availability' && (
+        <section className="space-y-4 pb-24 lg:pb-0">
+          {/* Week strip — desktop only, derived from editor state */}
+          <div className="hidden lg:grid grid-cols-7 gap-2">
+            {DAY_ORDER.map((d) => (
+              <div
+                key={d}
+                className={`rounded-xl border border-hairline px-2 py-2 text-center ${
+                  week[d].enabled ? 'bg-accent/10' : ''
+                }`}
+              >
+                <p className="font-mono-utility text-[10px] text-muted">{WEEKDAYS[d].slice(0, 3)}</p>
+                <p className={`text-xs font-medium ${week[d].enabled ? 'text-ink' : 'text-muted'}`}>
+                  {week[d].enabled ? `${shortTime(week[d].start)}–${shortTime(week[d].end)}` : 'OFF'}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:items-start">
+            {/* Weekly hours editor */}
+            <Card className="space-y-3">
+              <h3 className="font-display text-sm font-semibold">Weekly hours</h3>
+              <p className="text-xs text-muted">
+                Set the days and hours you are available. The matching engine only sends you offers inside these windows.
+              </p>
+              <div className="divide-y divide-hairline">
+                {DAY_ORDER.map((d) => {
+                  const w = week[d];
+                  const rowInvalid = w.enabled && w.start >= w.end;
+                  return (
+                    <div key={d} className="py-2.5 first:pt-0 last:pb-0">
+                      <div className="flex items-center gap-3">
+                        <label className="flex w-28 shrink-0 items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={w.enabled}
+                            onChange={(e) => setDay(d, { enabled: e.target.checked })}
+                            className="h-4 w-4 accent-[rgb(var(--accent))]"
+                          />
+                          <span className={`text-sm ${w.enabled ? 'text-ink font-medium' : 'text-muted'}`}>
+                            {WEEKDAYS[d]}
+                          </span>
+                        </label>
+                        <div className={`flex flex-1 items-center gap-2 ${w.enabled ? '' : 'opacity-40'}`}>
+                          <Input
+                            type="time"
+                            value={w.start}
+                            disabled={!w.enabled}
+                            onChange={(e) => setDay(d, { start: e.target.value })}
+                          />
+                          <span className="text-xs text-muted">to</span>
+                          <Input
+                            type="time"
+                            value={w.end}
+                            disabled={!w.enabled}
+                            onChange={(e) => setDay(d, { end: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      {rowInvalid && (
+                        <p className="mt-1 text-xs text-danger">End time must be after start time</p>
+                      )}
                     </div>
-                    <button
-                      onClick={() => deleteSlot(s.id)}
-                      className="tap p-1 text-danger hover:brightness-95"
-                      aria-label="Delete slot"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted">No availability hours set up yet.</p>
-            )}
-          </Card>
-
-          <Card>
-            <form onSubmit={addSlot} className="space-y-3">
-              <h4 className="font-display text-xs font-semibold">Add a regular working slot</h4>
-              <div className="grid grid-cols-3 gap-2">
-                <Field label="Weekday">
-                  <select
-                    value={newWeekday}
-                    onChange={(e) => setNewWeekday(e.target.value)}
-                    className="tap w-full rounded-xl border border-hairline bg-white px-3 py-2 text-sm focus:border-ink focus:outline-none"
-                  >
-                    {WEEKDAYS.map((w, idx) => (
-                      <option key={w} value={idx}>
-                        {w}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Start time">
-                  <Input
-                    type="time"
-                    required
-                    value={newStart}
-                    onChange={(e) => setNewStart(e.target.value)}
-                  />
-                </Field>
-                <Field label="End time">
-                  <Input
-                    type="time"
-                    required
-                    value={newEnd}
-                    onChange={(e) => setNewEnd(e.target.value)}
-                  />
-                </Field>
+                  );
+                })}
               </div>
-              {slotsError && <p className="text-xs text-danger">{slotsError}</p>}
-              <Button type="submit" disabled={submitting} className="w-full flex items-center justify-center gap-1">
-                <Plus className="h-4 w-4" /> Add Slot
-              </Button>
-            </form>
-          </Card>
-        </section>
-      )}
 
-      {/* Time Off */}
-      {tab === 'timeoff' && (
-        <section className="space-y-4">
-          <Card className="space-y-3">
-            <h3 className="font-display text-sm font-semibold flex items-center gap-2">
-              <Coffee className="h-4 w-4 text-muted" /> Scheduled Time Off
-            </h3>
-            <p className="text-xs text-muted">
-              Add dates when you want to block out work. The matching engine will not send you offers during these dates.
-            </p>
-            {timeOffList.length > 0 ? (
-              <ul className="space-y-2 divide-y divide-hairline">
-                {timeOffList.map((t) => (
-                  <li key={t.id} className="flex items-center justify-between pt-2 first:pt-0">
-                    <span className="text-sm font-medium">
-                      {ukDate(t.start_date)}
-                      {t.start_date !== t.end_date && ` to ${ukDate(t.end_date)}`}
-                    </span>
-                    <button
-                      onClick={() => deleteTimeOff(t.id)}
-                      className="tap p-1 text-danger hover:brightness-95"
-                      aria-label="Delete time off"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted">No scheduled time off.</p>
-            )}
-          </Card>
-
-          <Card>
-            <form onSubmit={addTimeOff} className="space-y-3">
-              <h4 className="font-display text-xs font-semibold">Block out calendar dates</h4>
-              <div className="grid grid-cols-2 gap-2">
-                <Field label="Start date">
-                  <Input
-                    type="date"
-                    required
-                    value={newStartOff}
-                    onChange={(e) => setNewStartOff(e.target.value)}
-                  />
-                </Field>
-                <Field label="End date">
-                  <Input
-                    type="date"
-                    required
-                    value={newEndOff}
-                    onChange={(e) => setNewEndOff(e.target.value)}
-                  />
-                </Field>
+              {/* Save bar — fixed above the AppShell bottom tab bar on mobile, static in the card on lg+ */}
+              {/* ponytail: 3.5rem ≈ measured tab-bar height in app-shell.tsx; not tokenized until a second consumer needs it */}
+              <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 border-t border-hairline bg-bg/95 px-4 py-3 backdrop-blur lg:static lg:z-auto lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+                {scheduleError && <p className="mb-2 text-xs text-danger">{scheduleError}</p>}
+                <Button onClick={saveSchedule} disabled={saving} className="w-full">
+                  {saving ? 'Saving…' : saved ? 'Saved' : 'Save schedule'}
+                </Button>
               </div>
-              {timeOffError && <p className="text-xs text-danger">{timeOffError}</p>}
-              <Button type="submit" disabled={submitting} className="w-full flex items-center justify-center gap-1">
-                <Plus className="h-4 w-4" /> Block Out Dates
-              </Button>
-            </form>
-          </Card>
+            </Card>
+
+            {/* Time off panel */}
+            <Card className="space-y-3">
+              <h3 className="font-display text-sm font-semibold flex items-center gap-2">
+                <Coffee className="h-4 w-4 text-muted" /> Scheduled Time Off
+              </h3>
+              <p className="text-xs text-muted">
+                Add dates when you want to block out work. The matching engine will not send you offers during these dates.
+              </p>
+              {timeOffList.length > 0 ? (
+                <ul className="space-y-2 divide-y divide-hairline">
+                  {timeOffList.map((t) => (
+                    <li key={t.id} className="flex items-center justify-between pt-2 first:pt-0">
+                      <span className="text-sm font-medium">
+                        {ukDate(t.start_date)}
+                        {t.start_date !== t.end_date && ` to ${ukDate(t.end_date)}`}
+                      </span>
+                      <button
+                        onClick={() => deleteTimeOff(t.id)}
+                        className="tap p-1 text-danger hover:brightness-95"
+                        aria-label="Delete time off"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted">No scheduled time off.</p>
+              )}
+
+              <form onSubmit={addTimeOff} className="space-y-3 border-t border-hairline pt-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Start date">
+                    <Input
+                      type="date"
+                      required
+                      value={newStartOff}
+                      onChange={(e) => setNewStartOff(e.target.value)}
+                    />
+                  </Field>
+                  <Field label="End date">
+                    <Input
+                      type="date"
+                      required
+                      value={newEndOff}
+                      onChange={(e) => setNewEndOff(e.target.value)}
+                    />
+                  </Field>
+                </div>
+                {timeOffError && <p className="text-xs text-danger">{timeOffError}</p>}
+                <Button type="submit" variant="outline" disabled={submitting} className="w-full flex items-center justify-center gap-1">
+                  <Plus className="h-4 w-4" /> Add time off
+                </Button>
+              </form>
+            </Card>
+          </div>
         </section>
       )}
     </div>
   );
 }
-

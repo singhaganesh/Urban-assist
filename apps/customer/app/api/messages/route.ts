@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseServer } from '@urban-assist/db/server';
+import { getSupabaseServer, createServiceRole } from '@urban-assist/db/server';
 
 export async function POST(req: NextRequest) {
   const db = getSupabaseServer();
@@ -13,5 +13,26 @@ export async function POST(req: NextRequest) {
     .select()
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+  // Notify the other booking participant. Non-fatal: never block the send.
+  // notifications RLS is owner-only, so this insert needs the service role.
+  try {
+    const { data: b } = await db
+      .from('bookings')
+      .select('customer_id, provider_id')
+      .eq('id', booking_id)
+      .single();
+    const recipient = b?.customer_id === user.id ? b?.provider_id : b?.customer_id;
+    if (recipient) {
+      await createServiceRole().from('notifications').insert({
+        profile_id: recipient,
+        type: 'message.new',
+        payload: { booking_id, preview: String(content).slice(0, 140) },
+      });
+    }
+  } catch {
+    /* non-fatal */
+  }
+
   return NextResponse.json(data);
 }

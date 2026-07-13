@@ -263,12 +263,38 @@ export function BookingDetail({ booking: initialBooking, payment: initialPayment
       </Card>
 
       <Card className="space-y-3">
-        <div className="text-xs font-mono-utility text-muted">Chat</div>
-        <ul className="max-h-64 space-y-1 overflow-y-auto text-sm">
+        <div className="flex items-center justify-between">
+          <div className="text-xs font-mono-utility text-muted">
+            Chat with {booking.provider?.full_name ?? 'your provider'}
+          </div>
+          {booking.provider?.phone && (
+            <a href={`tel:${booking.provider.phone}`} className="flex items-center gap-1 text-xs font-medium text-accent">
+              <Phone className="h-3.5 w-3.5" /> Call
+            </a>
+          )}
+        </div>
+        <ul className="max-h-64 space-y-1.5 overflow-y-auto text-sm">
           {messages.length === 0 && <li className="text-muted">No messages yet — say hi when you're matched.</li>}
-          {messages.map((m) => (
-            <li key={m.id} className="rounded-lg bg-bg px-3 py-2">{m.content}</li>
-          ))}
+          {messages.map((m, i) => {
+            const label = dayLabel(m.created_at);
+            const showDivider = i === 0 || dayLabel(messages[i - 1].created_at) !== label;
+            const mine = m.sender_id === booking.customer_id;
+            return (
+              <React.Fragment key={m.id}>
+                {showDivider && <li className="py-1.5 text-center text-[11px] text-muted">{label}</li>}
+                <li
+                  className={`flex max-w-[80%] flex-col rounded-xl px-3 py-2 ${
+                    mine ? 'ml-auto bg-accent text-white' : 'mr-auto bg-bg text-ink'
+                  }`}
+                >
+                  <span>{m.content}</span>
+                  <span className={`mt-0.5 self-end text-[11px] ${mine ? 'text-white/70' : 'text-muted'}`}>
+                    {hhmm(m.created_at)}
+                  </span>
+                </li>
+              </React.Fragment>
+            );
+          })}
         </ul>
         <form onSubmit={sendMessage} className="flex gap-2">
           <input
@@ -455,6 +481,20 @@ export function BookingDetail({ booking: initialBooking, payment: initialPayment
       )}
     </div>
   );
+}
+
+function hhmm(iso: string) {
+  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function dayLabel(iso: string) {
+  const d = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (d.toDateString() === today.toDateString()) return 'Today';
+  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function tone(s: string) {

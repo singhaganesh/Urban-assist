@@ -30,7 +30,7 @@ export default function AdminLoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg px-4">
       <div className="card w-full max-w-sm">
-        <h1 className="font-display text-xl font-bold text-ink mb-1">HomeEase Admin</h1>
+        <h1 className="font-display text-xl font-bold text-ink mb-1">Urban Assist Admin</h1>
         <p className="text-sm text-muted mb-6">Sign in with your admin credentials.</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

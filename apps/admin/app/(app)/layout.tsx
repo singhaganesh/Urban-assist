@@ -54,7 +54,7 @@ export default async function AdminAppLayout({ children }: { children: React.Rea
       {/* DESKTOP SIDEBAR */}
       <aside className="hidden lg:flex flex-col w-56 border-r border-hairline px-4 py-6 gap-1 shrink-0 bg-white">
         <div className="px-2 mb-4">
-          <span className="font-display text-base font-bold text-ink">HomeEase</span>
+          <span className="font-display text-base font-bold text-ink">Urban Assist</span>
           <span className="ml-1 text-xs text-muted font-mono-utility">ADMIN</span>
         </div>
 

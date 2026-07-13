@@ -151,9 +151,11 @@ export function LoginForm() {
             </div>
           </Field>
           {error && <p className="text-xs text-danger">{error}</p>}
-          <Button size="block" type="submit" disabled={loading || !phoneVal}>
-            {loading ? 'Sending…' : 'Send verification code'}
-          </Button>
+          <div className="fixed inset-x-0 bottom-0 border-t border-hairline bg-white p-4 lg:static lg:border-0 lg:bg-transparent lg:p-0">
+            <Button size="block" type="submit" disabled={loading || !phoneVal}>
+              {loading ? 'Sending…' : 'Send verification code'}
+            </Button>
+          </div>
           <p className="text-center text-xs text-muted">
             We&apos;ll send a 6-digit SMS code to verify your number.
           </p>
@@ -172,9 +174,11 @@ export function LoginForm() {
             />
           </Field>
           {error && <p className="text-xs text-danger">{error}</p>}
-          <Button size="block" type="submit" disabled={loading || otp.length < 6}>
-            {loading ? 'Verifying…' : 'Verify and continue'}
-          </Button>
+          <div className="fixed inset-x-0 bottom-0 border-t border-hairline bg-white p-4 lg:static lg:border-0 lg:bg-transparent lg:p-0">
+            <Button size="block" type="submit" disabled={loading || otp.length < 6}>
+              {loading ? 'Verifying…' : 'Verify and continue'}
+            </Button>
+          </div>
           <div className="flex items-center justify-between">
             <button
               type="button"

@@ -319,7 +319,7 @@ export default function EarningsPage() {
 
       {/* Self-employed tax record info for UK */}
       <footer className="text-center text-[10px] text-muted py-4 border-t border-hairline mt-8 print-only-tax-footer">
-        <p>HomeEase Pro Statement · Local UK currency: GBP · Inclusive of VAT where applicable.</p>
+        <p>Urban Assist Pro Statement · Local UK currency: GBP · Inclusive of VAT where applicable.</p>
         <p className="mt-1">Generated on {new Date().toLocaleDateString('en-GB')} for UK HMRC Self-Employment Records.</p>
       </footer>
 

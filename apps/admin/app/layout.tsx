@@ -3,8 +3,8 @@ import './globals.css';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'HomeEase Admin',
-  description: 'Internal admin panel for HomeEase platform operations.',
+  title: 'Urban Assist Admin',
+  description: 'Internal admin panel for Urban Assist platform operations.',
 };
 
 export const viewport: Viewport = {

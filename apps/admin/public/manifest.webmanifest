@@ -1,7 +1,7 @@
 {
-  "name": "HomeEase Admin",
+  "name": "Urban Assist Admin",
   "short_name": "HE Admin",
-  "description": "HomeEase internal admin panel",
+  "description": "Urban Assist internal admin panel",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FAFAF8",
